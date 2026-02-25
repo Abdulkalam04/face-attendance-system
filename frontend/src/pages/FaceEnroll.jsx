@@ -7,6 +7,7 @@ import API from "../api";
 export default function FaceEnroll() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const streamRef = useRef(null);
   const navigate = useNavigate();
 
   const [status, setStatus] = useState("idle");
@@ -14,36 +15,55 @@ export default function FaceEnroll() {
 
   // Fetch identity based on role (Student: userRollNo, Teacher: classId)
   const studentId = localStorage.getItem("userRollNo") || localStorage.getItem("classId") || localStorage.getItem("teacher_id");
-  const [videoReady, setVideoReady] = useState(false);
+  const [loadingCamera, setLoadingCamera] = useState(false);
 
   useEffect(() => {
+    startCamera(); // Auto-start camera on mount
     return () => stopCamera();
   }, []);
 
   const startCamera = async () => {
     try {
-      setVideoReady(false);
+      setLoadingCamera(true);
       setStatus("streaming");
 
+      // Request camera access first
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720, facingMode: "user" }
+        video: { facingMode: "user" } // Simplified constraints for maximum compatibility
       });
+
+      streamRef.current = stream; // Store stream in ref for reliable stop
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play();
       }
     } catch (err) {
       console.error("Camera Error:", err);
       alert("Could not access camera. Please allow permissions.");
       setStatus("idle");
+    } finally {
+      setLoadingCamera(false);
     }
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach((track) => track.stop());
+    if (streamRef.current) {
+      const tracks = streamRef.current.getTracks();
+      tracks.forEach((track) => {
+        track.stop();
+        console.log("Stopped track:", track.label);
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+  };
+
+  const handleBack = () => {
+    stopCamera();
+    navigate(-1);
   };
 
   const captureAndUpload = async () => {
@@ -98,7 +118,7 @@ export default function FaceEnroll() {
 
       {/* Back Button */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={handleBack}
         className="absolute top-8 left-8 z-20 flex items-center gap-2 text-indigo-500 font-bold text-xs uppercase tracking-widest hover:text-indigo-700 transition-all group"
       >
         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -146,15 +166,18 @@ export default function FaceEnroll() {
             autoPlay
             muted
             playsInline
-            onCanPlay={() => {
-              setVideoReady(true);
-              videoRef.current.play();
-            }}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${videoReady ? "opacity-100" : "opacity-0"
-              }`}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
           />
 
           <canvas ref={canvasRef} className="hidden" />
+
+          {/* 2.5 LOADING CAMERA OVERLAY */}
+          {loadingCamera && (
+            <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center">
+              <RefreshCw className="text-white animate-spin mb-4" size={40} />
+              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">Accessing Lens...</p>
+            </div>
+          )}
 
           {/* 3. PROCESSING OVERLAY */}
           {status === "processing" && (
@@ -178,7 +201,10 @@ export default function FaceEnroll() {
 
               <div className="flex flex-col w-full gap-3">
                 <button
-                  onClick={() => navigate("/student-dashboard")}
+                  onClick={() => {
+                    stopCamera();
+                    navigate("/student-dashboard");
+                  }}
                   className="w-full bg-white text-emerald-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                   Return to Dashboard

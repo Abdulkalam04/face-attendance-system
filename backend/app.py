@@ -68,34 +68,32 @@ SENDER_EMAIL = "abdulka0440r@gmail.com"
 SENDER_PASSWORD = "nwpp bkwz gauq afly" 
 
 def send_email_alert(to_email, student_name, percentage):
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = to_email
-        msg['Subject'] = f"LOW ATTENDANCE ALERT: {student_name}"
+    """Send a low-attendance alert email. Raises on failure so caller knows."""
+    msg = MIMEMultipart()
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = to_email
+    msg['Subject'] = f"LOW ATTENDANCE ALERT: {student_name}"
 
-        body = f"""
-        Dear {student_name},
+    body = f"""
+Dear {student_name},
 
-        This is an automated alert from the Attendance Tracking System.
-        Your attendance for the current month has dropped to {percentage}%, which is below the required 75%.
+This is an automated alert from the Attendance Tracking System.
+Your attendance for the current month has dropped to {percentage}%, which is below the required 75%.
 
-        Please ensure you attend your upcoming lectures to maintain your academic standing.
-        Excessive absenteeism may lead to disciplinary action or hall ticket blocking.
+Please ensure you attend your upcoming lectures to maintain your academic standing.
+Excessive absenteeism may lead to disciplinary action or hall ticket blocking.
 
-        Regards,
-        College Administration
-        """
-        msg.attach(MIMEText(body, 'plain'))
+Regards,
+College Administration
+    """
+    msg.attach(MIMEText(body, 'plain'))
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        print(f"📧 Alert email sent to {to_email}")
-    except Exception as e:
-        print(f"❌ Failed to send email: {e}")
+    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+    server.starttls()
+    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+    server.send_message(msg)
+    server.quit()
+    print(f"📧 Alert email sent to {to_email}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
@@ -858,65 +856,99 @@ def get_leaderboard(class_id):
         print("Leaderboard Error:", e)
         return jsonify({"error": str(e)}), 500
 
-def check_and_send_low_attendance_alerts(class_id):
-    try:
-        now = datetime.now()
-        month_start = now.replace(day=1).strftime("%Y-%m-%d")
-        month_end = now.strftime("%Y-%m-%d")
+def check_and_send_low_attendance_alerts(class_id, force=False):
+    """
+    Scan all students in a class and email those below 75% attendance.
+    force=True: bypasses the 7-day cooldown and the min-3-lectures guard.
+                Used when the teacher manually clicks 'Send Manual Alert'.
+    """
+    now = datetime.now()
+    month_start = now.replace(day=1).strftime("%Y-%m-%d")
+    month_end = now.strftime("%Y-%m-%d")
 
-        # 1. Get all students enrolled in this class
-        enrollments = ClassEnrollment.query.filter_by(class_id=class_id).all()
-        student_rolls = [e.student_roll for e in enrollments]
-        
-        # Also check students directly assigned to this teacher
-        direct_students = Student.query.filter_by(teacher_id=class_id).all()
-        for s in direct_students:
-            if s.roll_no not in student_rolls:
-                student_rolls.append(s.roll_no)
+    # 1. Gather all student roll numbers in this class
+    enrollments = ClassEnrollment.query.filter_by(class_id=class_id).all()
+    student_rolls = [e.student_roll for e in enrollments]
 
-        # 2. Total lectures for this class this month
-        total_classes = LectureSession.query.filter(
-            LectureSession.teacher_id == class_id,
-            LectureSession.date >= month_start,
-            LectureSession.date <= month_end
+    direct_students = Student.query.filter_by(teacher_id=class_id).all()
+    for s in direct_students:
+        if s.roll_no not in student_rolls:
+            student_rolls.append(s.roll_no)
+
+    if not student_rolls:
+        return 0  # No students in class at all
+
+    # 2. Total lectures this month
+    total_classes = LectureSession.query.filter(
+        LectureSession.teacher_id == class_id,
+        LectureSession.date >= month_start,
+        LectureSession.date <= month_end
+    ).count()
+
+    # For automatic triggers only: skip if not enough data yet
+    if not force and total_classes < 3:
+        print(f"ℹ️ Skipping alerts for {class_id}: only {total_classes} lecture(s) this month.")
+        return 0
+
+    # If no lectures at all (even for manual), nothing to calculate
+    if total_classes == 0:
+        return 0
+
+    alerts_sent = 0
+    errors = []
+
+    for roll in student_rolls:
+        student = Student.query.filter_by(roll_no=roll).first()
+        if not student:
+            continue
+
+        # Skip if alerted in the last 7 days — ONLY when not a manual trigger
+        if not force and student.last_alert_date:
+            try:
+                last_alert = datetime.fromisoformat(student.last_alert_date)
+                if (now - last_alert).days < 7:
+                    continue
+            except:
+                pass
+
+        # Calculate this student's attendance %
+        attended = Attendance.query.filter(
+            Attendance.student_name == student.name,
+            Attendance.teacher_id == class_id,
+            Attendance.status == "Present",
+            Attendance.date >= month_start,
+            Attendance.date <= month_end
         ).count()
 
-        if total_classes < 3: return # Don't alert if only 1-2 classes happened
+        percentage = (attended / total_classes) * 100
 
-        for roll in student_rolls:
-            student = Student.query.filter_by(roll_no=roll).first()
-            if not student: continue
-
-            # Check if we already alerted this week
-            if student.last_alert_date:
-                try:
-                    last_alert = datetime.fromisoformat(student.last_alert_date)
-                    if (now - last_alert).days < 7: continue
-                except: pass
-
-            # Calculate attendance for this month
-            attended = Attendance.query.filter(
-                Attendance.student_name == student.name,
-                Attendance.teacher_id == class_id,
-                Attendance.status == "Present",
-                Attendance.date >= month_start,
-                Attendance.date <= month_end
-            ).count()
-
-            percentage = (attended / total_classes) * 100
-            if percentage < 75:
+        if percentage < 75:
+            try:
                 send_email_alert(student.email, student.name, round(percentage, 1))
                 student.last_alert_date = now.isoformat()
-        
-        db.session.commit()
-    except Exception as e:
-        print(f"Alert System Error: {e}")
-        raise e
+                alerts_sent += 1
+            except Exception as mail_err:
+                error_msg = f"Failed to email {student.email}: {mail_err}"
+                print(f"❌ {error_msg}")
+                errors.append(error_msg)
+
+    db.session.commit()
+
+    if errors:
+        # Surface the first email error so the teacher sees it
+        raise Exception(f"Email delivery failed for {len(errors)} student(s). First error: {errors[0]}")
+
+    return alerts_sent
+
+
 @app.route('/api/teacher/trigger-alerts/<class_id>', methods=['POST'])
 def trigger_alerts(class_id):
     try:
-        check_and_send_low_attendance_alerts(class_id)
-        return jsonify({"message": "Scan complete. Alerts sent to students below 75%."}), 200
+        # force=True: teacher manually clicked the button — bypass cooldown & min-classes guard
+        count = check_and_send_low_attendance_alerts(class_id, force=True)
+        if count == 0:
+            return jsonify({"message": "✅ All students have attendance above 75%. No alerts needed!"}), 200
+        return jsonify({"message": f"✅ Done! Alert emails sent to {count} student(s) below 75% attendance."}), 200
     except Exception as e:
         print(f"Trigger Error: {e}")
         return jsonify({"error": str(e)}), 500
