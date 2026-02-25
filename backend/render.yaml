@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: face-attendance-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://your-app.vercel.app   # UPDATE after deploying frontend
+      - key: PERSISTENT_DIR
+        value: /opt/render/project/data
+    disk:
+      name: attendance-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1

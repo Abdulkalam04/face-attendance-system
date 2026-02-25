@@ -1,0 +1,18 @@
+# ===== BACKEND =====
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/instance/
+backend/face_data.pkl
+backend/uploads/
+backend/.env
+
+# ===== FRONTEND =====
+frontend/node_modules/
+frontend/.env.local
+frontend/.env
+frontend/dist/
+
+# ===== GENERAL =====
+.DS_Store
+*.log

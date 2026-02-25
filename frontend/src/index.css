@@ -1,0 +1,345 @@
+@import "tailwindcss";
+
+
+/* 1. Global Reset & Theme */
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  background-color: #020617;
+  /* Matches our Dashboard Theme */
+}
+
+:root {
+  --bg-main: linear-gradient(to bottom right, #f8faff, #ffffff, #f1f4ff);
+  --text-main: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --border-color: #e2e8f0;
+  --accent-color: #4f46e5;
+  --sidebar-bg: #ffffff;
+}
+
+[data-theme='dark'] {
+  --bg-main: linear-gradient(to bottom right, #020617, #0f172a, #020617);
+  --text-main: #f8fafc;
+  --card-bg: rgba(15, 23, 42, 0.8);
+  --border-color: #1e293b;
+  --accent-color: #818cf8;
+  --sidebar-bg: #0f172a;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-main);
+  background-attachment: fixed;
+  color: var(--text-main);
+  min-height: 100vh;
+  transition: background 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease;
+  position: relative;
+}
+
+/* Starry Background for Dark Mode */
+/* Old star styles removed */
+
+/* 3. Dark Mode Overrides for Tailwind Classes */
+[data-theme='dark'] .bg-white,
+[data-theme='dark'] .bg-white\/90,
+[data-theme='dark'] .bg-white\/80,
+[data-theme='dark'] .bg-white\/70 {
+  background-color: var(--card-bg) !important;
+  color: #ffffff !important;
+  border-color: var(--border-color) !important;
+  backdrop-filter: blur(24px) !important;
+}
+
+[data-theme='dark'] .text-slate-900,
+[data-theme='dark'] .text-slate-800,
+[data-theme='dark'] .text-slate-700,
+[data-theme='dark'] .text-indigo-900,
+[data-theme='dark'] .text-indigo-800,
+[data-theme='dark'] .text-gray-900,
+[data-theme='dark'] .text-gray-800,
+[data-theme='dark'] .text-gray-700 {
+  color: #f8fafc !important;
+  /* Slate-50 */
+}
+
+[data-theme='dark'] .text-slate-600,
+[data-theme='dark'] .text-slate-500,
+[data-theme='dark'] .text-slate-400,
+[data-theme='dark'] .text-gray-600,
+[data-theme='dark'] .text-gray-500,
+[data-theme='dark'] .text-gray-400,
+[data-theme='dark'] .text-indigo-500,
+[data-theme='dark'] .text-indigo-400 {
+  color: #cbd5e1 !important;
+  /* Slate-300 */
+}
+
+[data-theme='dark'] .bg-slate-50,
+[data-theme='dark'] .bg-slate-50\/50,
+[data-theme='dark'] .bg-indigo-50,
+[data-theme='dark'] .bg-indigo-50\/30,
+[data-theme='dark'] .bg-indigo-50\/20,
+[data-theme='dark'] .bg-orange-50\/30 {
+  background-color: rgba(30, 41, 59, 0.4) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .text-indigo-700,
+[data-theme='dark'] .text-indigo-600 {
+  color: #818cf8 !important;
+  /* Indigo-400 for high visibility */
+}
+
+[data-theme='dark'] .bg-indigo-600\/10 {
+  background-color: rgba(79, 70, 229, 0.2) !important;
+}
+
+/* Status Badge Fixes (Present/Absent) */
+[data-theme='dark'] .bg-emerald-100,
+[data-theme='dark'] .bg-emerald-500\/10,
+[data-theme='dark'] .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+[data-theme='dark'] .text-emerald-600,
+[data-theme='dark'] .text-emerald-700 {
+  color: #34d399 !important;
+  /* Emerald-400 */
+}
+
+[data-theme='dark'] .bg-rose-100,
+[data-theme='dark'] .bg-rose-500\/10,
+[data-theme='dark'] .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+[data-theme='dark'] .text-rose-600,
+[data-theme='dark'] .text-rose-700 {
+  color: #fb7185 !important;
+  /* Rose-400 */
+}
+
+[data-theme='dark'] .border-indigo-200 {
+  border-color: rgba(129, 140, 248, 0.4) !important;
+}
+
+[data-theme='dark'] thead,
+[data-theme='dark'] th {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #ffffff !important;
+}
+
+/* Golden Leaderboard Fix for Dark Mode */
+[data-theme='dark'] .bg-amber-50 {
+  background-color: rgba(251, 191, 36, 0.1) !important;
+  /* Deep Gold Glass */
+  border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+[data-theme='dark'] .bg-amber-50 .text-slate-900,
+[data-theme='dark'] .bg-amber-50 .text-gray-400 {
+  color: #fbbf24 !important;
+  /* Force Amber color for text in golden card */
+}
+
+[data-theme='dark'] .text-amber-600,
+[data-theme='dark'] .text-amber-500 {
+  color: #fbbf24 !important;
+}
+
+[data-theme='dark'] .bg-amber-100 {
+  background-color: rgba(251, 191, 36, 0.2) !important;
+}
+
+[data-theme='dark'] input,
+[data-theme='dark'] select,
+[data-theme='dark'] textarea {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+[data-theme='dark'] h1,
+[data-theme='dark'] h2,
+[data-theme='dark'] h3,
+[data-theme='dark'] h4,
+[data-theme='dark'] span,
+[data-theme='dark'] p,
+[data-theme='dark'] label,
+[data-theme='dark'] th,
+[data-theme='dark'] td {
+  color: inherit;
+}
+
+/* IMPORTANT: Fix star visibility by making dark page backgrounds semi-transparent */
+[data-theme='dark'] .bg-gradient-to-br,
+[data-theme='dark'] .bg-gradient-to-tr,
+[data-theme='dark'] .bg-indigo-50 {
+  background-image: none !important;
+  background: transparent !important;
+}
+
+/* FIXED DARK MODE BACKGROUND & STARS */
+[data-theme='dark'] body {
+  background: transparent !important;
+  /* Allow pseudo-elements to show */
+}
+
+/* 1. The Dark Background Gradient (Deepest Layer) */
+[data-theme='dark'] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%) !important;
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* 2. The Stars (Middle Layer) */
+[data-theme='dark'] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  /* Above background, behind content */
+  opacity: 0.6;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px, #ffffff, rgba(0, 0, 0, 0)),
+    radial-gradient(1.5px 1.5px at 50px 160px, #ffffff, rgba(0, 0, 0, 0)),
+    radial-gradient(1.5px 1.5px at 90px 40px, #ffffff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 160px 120px, #ffffff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 250px 280px, #ffffff, rgba(0, 0, 0, 0));
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  animation: starsPulse 4s infinite alternate ease-in-out;
+}
+
+@keyframes starsPulse {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* 4. Smooth Transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* 5. Custom Glassmorphism Effect */
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* 6. Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* 7. Fix for Image/Video */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 8. Focus Ring */
+input:focus,
+button:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* 9. Fix Notification Background in Dark Mode */
+[data-theme='dark'] .Toastify__toast,
+[data-theme='dark'] .alert,
+[data-theme='dark'] [role="alert"] {
+  background-color: #312e81 !important;
+  /* Deep Indigo */
+  color: #ffffff !important;
+  border: 1px solid #6366f1 !important;
+  /* Indigo Border */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 10. Fix Notification Dropdown in Dark Mode */
+[data-theme='dark'] .notification-dropdown {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  /* Slate-900 */
+  border-color: #334155 !important;
+}
+
+[data-theme='dark'] .notification-header {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+  /* Slate-800 */
+  border-color: #334155 !important;
+}
+
+[data-theme='dark'] .notification-header span {
+  color: #f8fafc !important;
+  /* White text for title */
+}
+
+[data-theme='dark'] .notification-header button {
+  color: #fbbf24 !important;
+  /* Amber-400 for Mark All Read */
+}
+
+[data-theme='dark'] .notification-item {
+  border-color: #334155 !important;
+}
+
+[data-theme='dark'] .notification-item:hover {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+[data-theme='dark'] .notification-item h4 {
+  color: #f8fafc !important;
+  /* White title */
+}
+
+[data-theme='dark'] .notification-item p {
+  color: #94a3b8 !important;
+  /* Slate-400 description */
+}
+
+[data-theme='dark'] .notification-footer {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+  /* Slate-800 footer */
+}
+
+[data-theme='dark'] .notification-footer button {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .notification-footer button:hover {
+  color: #f8fafc !important;
+}

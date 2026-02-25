@@ -1,0 +1,11 @@
+flask
+flask-sqlalchemy
+flask-cors
+face-recognition
+pandas
+werkzeug
+dlib
+cmake
+gunicorn
+openpyxl
+itsdangerous

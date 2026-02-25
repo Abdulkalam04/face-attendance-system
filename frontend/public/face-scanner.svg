@@ -1,0 +1,20 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Frame Corners -->
+  <rect x="20" y="20" width="40" height="5" rx="2.5" fill="#4F46E5"/>
+  <rect x="20" y="20" width="5" height="40" rx="2.5" fill="#4F46E5"/>
+  <rect x="240" y="20" width="40" height="5" rx="2.5" fill="#4F46E5"/>
+  <rect x="275" y="20" width="5" height="40" rx="2.5" fill="#4F46E5"/>
+  <rect x="20" y="240" width="40" height="5" rx="2.5" fill="#4F46E5"/>
+  <rect x="20" y="205" width="5" height="40" rx="2.5" fill="#4F46E5"/>
+  <rect x="240" y="240" width="40" height="5" rx="2.5" fill="#4F46E5"/>
+  <rect x="275" y="205" width="5" height="40" rx="2.5" fill="#4F46E5"/>
+
+  <!-- Face Outline -->
+  <path d="M150 110C140 110 130 120 130 130V150C130 160 140 170 150 170C160 170 170 160 170 150V130C170 120 160 110 150 110Z" stroke="#9CA3AF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="150" cy="100" r="15" stroke="#9CA3AF" stroke-width="4"/>
+
+  <!-- Scanning Line -->
+  <rect x="40" y="150" width="220" height="4" fill="#F59E0B">
+    <animate attributeName="y" from="80" to="220" dur="2s" repeatCount="indefinite" />
+  </rect>
+</svg>
