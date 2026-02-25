@@ -18,25 +18,32 @@ export default function FaceEnroll() {
   const [loadingCamera, setLoadingCamera] = useState(false);
 
   useEffect(() => {
-    startCamera(); // Auto-start camera on mount
-    return () => stopCamera();
+    // Camera remains OFF by default. User must click 'Initialize' button.
+    return () => {
+      console.log("Cleanup: Strictly stopping camera tracks...");
+      stopCamera();
+    };
   }, []);
 
   const startCamera = async () => {
     try {
       setLoadingCamera(true);
-      setStatus("streaming");
+      // We don't set status to streaming yet, only after we have the stream
 
-      // Request camera access first
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" } // Simplified constraints for maximum compatibility
+        video: { facingMode: "user" }
       });
 
-      streamRef.current = stream; // Store stream in ref for reliable stop
+      streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        setStatus("streaming"); // Now we show the video UI
+
+        // Wait a tiny bit for the browser to register the source
+        setTimeout(() => {
+          videoRef.current?.play().catch(e => console.error("Play error:", e));
+        }, 100);
       }
     } catch (err) {
       console.error("Camera Error:", err);
@@ -146,19 +153,25 @@ export default function FaceEnroll() {
         >
 
 
-          {/* 1. IDLE STATE */}
+          {/* 1. IDLE STATE - Entire Card Clickable for better responsiveness */}
           {status === "idle" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-white">
-              <p className="text-slate-400 text-xs font-medium mb-6 px-10">Ensure you are in a well-lit area with a neutral background.</p>
-              <button
-                type="button"
-                onClick={startCamera}
-                className="p-6 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-200 hover:scale-110 active:scale-95 transition-all"
-              >
+            <motion.button
+              type="button"
+              onClick={startCamera}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-white group transition-all"
+            >
+              <p className="text-slate-400 text-xs font-medium mb-6 px-10 group-hover:text-indigo-400">
+                Ensure you are in a well-lit area with a neutral background.
+              </p>
+              <div className="p-6 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-200 group-hover:bg-indigo-700 group-hover:scale-110 transition-all">
                 <Camera size={32} />
-              </button>
-              <p className="text-indigo-600 text-[10px] mt-6 font-bold uppercase tracking-widest">Initialize Biometrics</p>
-            </div>
+              </div>
+              <p className="text-indigo-600 text-[10px] mt-6 font-bold uppercase tracking-widest group-hover:tracking-[0.25em] transition-all">
+                Initialize Biometrics
+              </p>
+            </motion.button>
           )}
           {/* 2. VIDEO STREAM */}
           <video
@@ -166,7 +179,8 @@ export default function FaceEnroll() {
             autoPlay
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+            onLoadedMetadata={() => videoRef.current?.play()}
+            className="absolute inset-0 w-full h-full object-cover"
           />
 
           <canvas ref={canvasRef} className="hidden" />
