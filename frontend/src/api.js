@@ -6,4 +6,6 @@ const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "https://face-attendance-backend.onrender.com/api",
 });
 
+console.log("Current API URL:", API.defaults.baseURL);
+
 export default API;

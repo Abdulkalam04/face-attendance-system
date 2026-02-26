@@ -97,7 +97,7 @@ export default function StudentRegister() {
       navigate("/student-login");
     } catch (err) {
       console.error("Full Error:", err);
-      const errorMsg = err.response?.data?.error || "Registration failed. Please check if the server is online and the URL is correct.";
+      const errorMsg = err.response?.data?.error || `Registration failed. Checked URL: ${API.defaults.baseURL}. Please ensure this URL is correct in your Render Dashboard.`;
       alert(errorMsg);
     }
     finally {
