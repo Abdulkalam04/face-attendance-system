@@ -1,40 +1,23 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim-bullseye
+# Use a specialized image that comes with dlib and face_recognition pre-installed
+# This avoids the slow and memory-intensive compilation process
+FROM animenosekai/face_recognition:latest
 
-# Install system dependencies required for dlib and face-recognition
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    libopenblas-dev \
-    liblapack-dev \
-    libx11-dev \
-    libgtk-3-dev \
-    libboost-all-dev \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set environment variable to limit memory usage during dlib compilation
-ENV DLIB_MAKE_THREADS=1
-
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Install cmake in python specifically
-RUN pip install --no-cache-dir cmake
-
-# Pre-install dlib specifically to isolate errors
-RUN pip install --no-cache-dir dlib
-
-# Copy the requirements file and install remaining packages
+# The base image already has dlib and face_recognition, 
+# so we only need to install your other dependencies.
 COPY requirements.txt .
+
+# Remove dlib and face-recognition from requirements.txt temporarily to avoid re-installing 
+# (though keeping them is usually fine as they'll show as 'already satisfied')
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+# Copy the rest of your application code
 COPY . .
 
-# Create directory for persistent data if it doesn't exist
-RUN mkdir -p /opt/render/project/data
+# Ensure the instance and uploads directories exist
+RUN mkdir -p /app/instance /app/uploads
 
-# Command to run the application
-# Using shell form to allow environment variable expansion
+# Render uses the $PORT environment variable
 CMD gunicorn app:app --bind 0.0.0.0:$PORT
