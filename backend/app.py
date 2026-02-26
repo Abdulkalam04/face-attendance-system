@@ -308,26 +308,35 @@ def register_student():
     if t_id:
         teacher = Teacher.query.filter_by(teacher_id=t_id).first()
         if not teacher:
-            return jsonify({"error": "Invalid Teacher ID provided"}), 404
+            print(f"Registration Error: Teacher ID {t_id} not found")
+            return jsonify({"error": f"Invalid Teacher ID: {t_id}. Please check the ID provided by your teacher."}), 404
 
-    new_student = Student(
-        name=data.get('name'),
-        roll_no=data.get('roll_no'),
-        email=email,
-        password=generate_password_hash(data.get('password')),
-        teacher_id=t_id if t_id else None
-    )
+    try:
+        new_student = Student(
+            name=data.get('name'),
+            roll_no=data.get('roll_no'),
+            email=email,
+            password=generate_password_hash(data.get('password')),
+            teacher_id=t_id if t_id else None
+        )
 
-    if image_file:
-        img = face_recognition.load_image_file(image_file)
-        encs = face_recognition.face_encodings(img)
-        if encs:
-            save_to_pickle(new_student.email, encs[0])
+        if image_file:
+            print(f"Processing face for {email}...")
+            img = face_recognition.load_image_file(image_file)
+            encs = face_recognition.face_encodings(img)
+            if encs:
+                save_to_pickle(new_student.email, encs[0])
+                print("Face encoding saved.")
+            else:
+                return jsonify({"error": "Face not detected in the image. Please try again with better lighting."}), 400
 
-    db.session.add(new_student)
-    db.session.commit()
+        db.session.add(new_student)
+        db.session.commit()
+        return jsonify({"message": "Global Registration Complete! You can now login."}), 201
 
-    return jsonify({"message": "Global Registration Complete! You can now login."}), 201
+    except Exception as e:
+        print(f"Registration Database Error: {str(e)}")
+        return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 # ---------------- PROFESSIONAL LOGIN (UNIVERSAL) ----------------
 @app.route('/api/login-with-face', methods=['POST'])
