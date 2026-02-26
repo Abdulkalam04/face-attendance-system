@@ -104,6 +104,10 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     a = math.sin(dphi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2)**2
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
+@app.route('/')
+def health_check():
+    return jsonify({"status": "online", "message": "Face Attendance API is running"}), 200
+
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
     data = request.json
