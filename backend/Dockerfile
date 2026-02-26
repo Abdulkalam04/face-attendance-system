@@ -1,24 +1,24 @@
-# Use Miniconda - it has pre-built binaries for dlib
 FROM continuumio/miniconda3
 
-# Install dlib and face_recognition using Conda (PRE-COMPILED BINARIES)
-# This takes seconds and won't crash your memory!
+# 1. Install face_recognition and dlib via Conda (Fast & Pre-compiled)
 RUN conda install -c conda-forge dlib face_recognition -y
 
-# Set working directory
+# 2. Set working directory
 WORKDIR /app
 
-# Install your other Python requirements
-COPY requirements.txt .
-# Create necessary folders and set permissions
+# 3. Create folders and set permissions FIRST
 RUN mkdir -p /app/instance /app/uploads && chmod -R 777 /app/instance /app/uploads
-# Filter out dlib and face_recognition from requirements.txt as they are already installed
+
+# 4. Install other dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your code
+# 5. Copy your code
 COPY . .
 
-# Start the app
-# (Miniconda uses a slightly different path for gunicorn, usually provided by pip)
-RUN pip install gunicorn
+# 6. Ensure the database path environment variable is set for the app
+ENV PERSISTENT_DIR=/app/instance
+ENV PORT=10000
+
+# 7. Start the app
 CMD gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120

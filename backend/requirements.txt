@@ -1,7 +1,6 @@
 flask
 flask-sqlalchemy
 flask-cors
-face-recognition
 pandas
 werkzeug
 gunicorn
