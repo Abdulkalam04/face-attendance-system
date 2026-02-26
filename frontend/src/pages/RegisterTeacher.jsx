@@ -114,8 +114,9 @@ export default function RegisterTeacher() {
       navigate("/login");
 
     } catch (err) {
+      console.error("Full Error:", err);
       const errorMsg =
-        err.response?.data?.error || "Registration failed. Check details.";
+        err.response?.data?.error || "Registration failed. Please check if the server is online and the URL is correct.";
       alert(errorMsg);
     } finally {
       setLoading(false);

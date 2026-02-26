@@ -96,8 +96,11 @@ export default function StudentRegister() {
       alert("Student Registration Successful!");
       navigate("/student-login");
     } catch (err) {
-      alert(err.response?.data?.error || "Registration failed.");
-    } finally {
+      console.error("Full Error:", err);
+      const errorMsg = err.response?.data?.error || "Registration failed. Please check if the server is online and the URL is correct.";
+      alert(errorMsg);
+    }
+    finally {
       setLoading(false);
     }
   };
