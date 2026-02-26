@@ -1,23 +1,32 @@
-# Use a specialized image that comes with dlib and face_recognition pre-installed
-# This avoids the slow and memory-intensive compilation process
-FROM animenosekai/face_recognition:latest
+# 1. Use the FULL Python image (this has build tools pre-installed)
+FROM python:3.10-bullseye
 
-# Set the working directory
+# 2. Install only the absolutely necessary extra system libraries
+RUN apt-get update && apt-get install -y \
+    cmake \
+    libopenblas-dev \
+    liblapack-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Set the single-core build limit (to prevent the 8GB memory crash)
+ENV DLIB_MAKE_THREADS=1
+
+# 4. Set working directory
 WORKDIR /app
 
-# The base image already has dlib and face_recognition, 
-# so we only need to install your other dependencies.
-COPY requirements.txt .
+# 5. Install dlib first (it's the hardest part, doing it alone is safer)
+# We use --verbose so we can see if it's actually working
+RUN pip install --no-cache-dir dlib==19.24.1
 
-# Remove dlib and face-recognition from requirements.txt temporarily to avoid re-installing 
-# (though keeping them is usually fine as they'll show as 'already satisfied')
+# 6. Install the rest of your requirements
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code
+# 7. Copy your code
 COPY . .
 
-# Ensure the instance and uploads directories exist
+# 8. Create necessary folders
 RUN mkdir -p /app/instance /app/uploads
 
-# Render uses the $PORT environment variable
-CMD gunicorn app:app --bind 0.0.0.0:$PORT
+# 9. Start the app
+CMD gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120
