@@ -9,22 +9,24 @@ RUN apt-get update && apt-get install -y \
     liblapack-dev \
     libx11-dev \
     libgtk-3-dev \
+    libboost-all-dev \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variable to limit memory usage during dlib compilation
-# This prevents the "Out of Memory" error by using only one CPU core for building
 ENV DLIB_MAKE_THREADS=1
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
-
-# Install dependencies
-# We install cmake first to ensure dlib can find it
+# Install cmake in python specifically
 RUN pip install --no-cache-dir cmake
+
+# Pre-install dlib specifically to isolate errors
+RUN pip install --no-cache-dir dlib
+
+# Copy the requirements file and install remaining packages
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
