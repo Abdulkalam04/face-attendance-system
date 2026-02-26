@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+instance/
+static/
+uploads/
+face_data.pkl
+.git/
+.gitignore
+.env
