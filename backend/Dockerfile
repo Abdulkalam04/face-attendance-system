@@ -10,6 +10,8 @@ WORKDIR /app
 
 # Install your other Python requirements
 COPY requirements.txt .
+# Create necessary folders and set permissions
+RUN mkdir -p /app/instance /app/uploads && chmod -R 777 /app/instance /app/uploads
 # Filter out dlib and face_recognition from requirements.txt as they are already installed
 RUN pip install --no-cache-dir -r requirements.txt
 
