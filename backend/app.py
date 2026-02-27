@@ -105,33 +105,31 @@ College Administration
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        # ✅ TRY PORT 465 (SSL) FIRST - More reliable on Render/Cloud
-        print(f"🔄 Attempting Port 465 SSL for {to_email}...")
+        # ✅ TRY PORT 465 (SSL) - Definitive attempt
+        host = "smtp.gmail.com"
+        port = 465
+        print(f"🔄 Connecting to {host}:{port} for {to_email}...")
+        
+        # Test DNS resolution
         try:
-            # Force IPv4 to prevent "Network is unreachable" errors
-            with smtplib.SMTP_SSL(SMTP_SERVER, 465, timeout=15) as server:
-                server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                server.send_message(msg)
-            print(f"📧 Alert email sent to {to_email} via Port 465")
-            return
-        except (smtplib.SMTPException, socket.error) as ssl_err:
-            print(f"⚠️ Port 465 failed, trying fallback Port 587: {ssl_err}")
-            
-            # ✅ FALLBACK TO PORT 587 (TLS)
-            with smtplib.SMTP(SMTP_SERVER, 587, timeout=15) as server:
-                server.starttls()
-                server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                server.send_message(msg)
-            print(f"📧 Alert email sent to {to_email} via Port 587")
+            ip = socket.gethostbyname(host)
+            print(f"� Resolved {host} to {ip}")
+        except:
+            print(f"❌ DNS Resolution FAILED for {host}")
+
+        with smtplib.SMTP_SSL(host, port, timeout=15) as server:
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+        print(f"📧 Alert email sent to {to_email} via Port 465 SSL")
 
     except smtplib.SMTPAuthenticationError:
         print("❌ SMTP Authentication Failed. This usually means the App Password is invalid or expired.")
         raise Exception("Authentication failed. Please check your App Password settings in Google.")
     except Exception as e:
         import traceback
-        print(f"❌ Final SMTP Error for {to_email}:")
+        print(f"❌ SMTP Error for {to_email}:")
         traceback.print_exc()
-        raise Exception(f"Mail Error: {str(e)}")
+        raise Exception(f"Mail Delivery failed: {str(e)}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
