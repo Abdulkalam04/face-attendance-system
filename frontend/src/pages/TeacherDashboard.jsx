@@ -239,17 +239,19 @@ export default function TeacherDashboard() {
 
       try {
         const res = await API.get(`/attendance/check-session/${cid.toUpperCase()}`);
-        if (res.data && res.data.active) {
+        if (res.data && res.data.active === true) {
           setIsSessionActive(true);
           setSessionData(prev => ({
             ...prev,
             message: res.data.message || "Class is live!",
-            duration: res.data.duration || prev.duration
+            duration: res.data.duration || 5
           }));
           if (res.data.expiry_time) updateTimer(res.data.expiry_time);
+        } else if (res.data && res.data.active === false) {
+          setIsSessionActive(false);
         }
       } catch (err) {
-        // Silently fail, just means no session is active or network blip
+        if (err.response?.status === 404) setIsSessionActive(false);
       }
     };
     checkExistingSession();
@@ -277,9 +279,9 @@ export default function TeacherDashboard() {
       timerInterval = setInterval(async () => {
         try {
           const res = await API.get(`/attendance/check-session/${teacherInfo.classId.toUpperCase()}`);
-          if (res.data && res.data.active) {
+          if (res.data && res.data.active === true) {
             if (res.data.expiry_time) updateTimer(res.data.expiry_time);
-          } else {
+          } else if (res.data && res.data.active === false) {
             console.log("Session explicitly ended by server");
             setIsSessionActive(false);
             setTimeLeft("");

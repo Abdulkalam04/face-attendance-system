@@ -1200,8 +1200,14 @@ def check_session(class_id):
     if session:
         # Check if session has expired
         if "expiry_time" in session:
-            expiry = datetime.fromisoformat(session["expiry_time"])
-            if datetime.now() > expiry:
+            # Parse as UTC (with Z)
+            expiry_str = session["expiry_time"]
+            if not expiry_str.endswith('Z'):
+                 expiry_str += 'Z'
+            
+            # Using datetime.fromisoformat and making it UTC aware
+            expiry = datetime.fromisoformat(expiry_str.replace('Z', '+00:00'))
+            if datetime.now(timezone.utc) > expiry:
                 active_sessions.pop(class_id, None)
                 # 📢 Check for low attendance when session expires
                 check_and_send_low_attendance_alerts(class_id)
@@ -1332,19 +1338,22 @@ def start_session():
     db.session.add(lecture)
     db.session.commit()
 
-    # Calculate expiry
+    # Calculate expiry using UTC
+    from datetime import timezone
+    now_utc = datetime.now(timezone.utc)
+    
     session_data = {
         "active": True,
-        "message": "Class is live!",
+        "message": data.get('message', "Class is live!"),
         "subject": data.get('subject'),
         "lecture_id": lecture.id,
         "pending": [],
-        "start_time": now.isoformat(),
+        "start_time": now_utc.isoformat().replace("+00:00", "Z"),
     }
 
     if duration > 0:
-        expiry_time = now + timedelta(minutes=int(duration))
-        session_data["expiry_time"] = expiry_time.isoformat()
+        expiry_time = now_utc + timedelta(minutes=int(duration))
+        session_data["expiry_time"] = expiry_time.isoformat().replace("+00:00", "Z")
         session_data["duration"] = duration
 
 # 2️⃣ STORE SESSION IN MEMORY
