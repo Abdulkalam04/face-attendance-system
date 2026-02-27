@@ -239,7 +239,8 @@ export default function TeacherDashboard() {
       if (!cid || cid === "NOT-ASSIGNED") return;
 
       try {
-        const res = await API.get(`/attendance/check-session/${cid.toUpperCase()}`);
+        const uppercaseCid = cid.toUpperCase().trim();
+        const res = await API.get(`/attendance/check-session/${uppercaseCid}`);
         if (res.data && res.data.active === true) {
           setIsSessionActive(true);
           setSessionData(prev => ({
@@ -248,11 +249,17 @@ export default function TeacherDashboard() {
             duration: res.data.duration || 5
           }));
           if (res.data.expiry_time) setExpiryTime(res.data.expiry_time);
-        } else if (res.data && res.data.active === false) {
+        } else {
           setIsSessionActive(false);
+          setExpiryTime(null);
+          setTimeLeft("");
         }
       } catch (err) {
-        if (err.response?.status === 404) setIsSessionActive(false);
+        if (err.response?.status === 404) {
+          setIsSessionActive(false);
+          setExpiryTime(null);
+          setTimeLeft("");
+        }
       }
     };
     checkExistingSession();
@@ -301,21 +308,24 @@ export default function TeacherDashboard() {
   // 2. NETWORK HEARTBEAT (Updates every 5s to sync with server)
   useEffect(() => {
     let syncInterval;
-    if (isSessionActive && teacherInfo.classId !== "NOT-ASSIGNED") {
+    const cid = teacherInfo.classId;
+    if (isSessionActive && cid && cid !== "NOT-ASSIGNED") {
       syncInterval = setInterval(async () => {
         try {
-          const res = await API.get(`/attendance/check-session/${teacherInfo.classId.toUpperCase()}`);
+          const uppercaseCid = cid.toUpperCase().trim();
+          const res = await API.get(`/attendance/check-session/${uppercaseCid}`);
           if (res.data && res.data.active === true) {
             if (res.data.expiry_time) setExpiryTime(res.data.expiry_time);
-          } else if (res.data && res.data.active === false) {
+          } else {
             setIsSessionActive(false);
+            setExpiryTime(null);
             setTimeLeft("");
             clearInterval(syncInterval);
           }
         } catch (e) {
           if (e.response?.status === 404) {
-            console.log("Session not found (404), ending locally");
             setIsSessionActive(false);
+            setExpiryTime(null);
             setTimeLeft("");
             clearInterval(syncInterval);
           }
@@ -361,15 +371,22 @@ export default function TeacherDashboard() {
   const stopAttendanceSession = async () => {
     if (!window.confirm("Are you sure you want to stop the attendance session?")) return;
     try {
+      const uppercaseCid = teacherInfo.classId.toUpperCase().trim();
       await API.post("/attendance/stop-session", {
-        classId: teacherInfo.classId,
+        classId: uppercaseCid,
       });
       setIsSessionActive(false);
+      setExpiryTime(null);
+      setTimeLeft("");
       alert("Attendance session stopped.");
     } catch (err) {
       console.error("Failed to stop session", err);
-      // Even if the API fails, we likely want to toggle the UI state
-      setIsSessionActive(false);
+      // If we get an error but the backend says 404, we're already stopped
+      if (err.response?.status === 404) {
+        setIsSessionActive(false);
+        setExpiryTime(null);
+        setTimeLeft("");
+      }
     }
   };
   // ✅ APPROVE / DECLINE LOGIC
