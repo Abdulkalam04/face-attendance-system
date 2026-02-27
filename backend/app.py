@@ -66,12 +66,12 @@ COLLEGE_LONG = 72.920806
 MAX_DISTANCE_METERS = 10000
 
 # ---------------- EMAIL CONFIG ----------------
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "abdulka0440r@gmail.com"
-# IMPORTANT: Do NOT use your regular password. 
-# Generate a 16-character "App Password" from your Google Account Security settings.
-SENDER_PASSWORD = "nwpp bkwz gauq afly" 
+# It's recommended to set these in your Render or Local Environment Variables
+SMTP_SERVER = os.environ.get('SMTP_SERVER', "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "abdulka0440r@gmail.com")
+# IMPORTANT: Generate a 16-character "App Password" from your Google Account
+SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nvbn vzpr vkoo khgn") 
 
 def send_email_alert(to_email, student_name, percentage):
     """Send a low-attendance alert email. Raises on failure so caller knows."""
@@ -94,12 +94,18 @@ College Administration
     """
     msg.attach(MIMEText(body, 'plain'))
 
-    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-    server.starttls()
-    server.login(SENDER_EMAIL, SENDER_PASSWORD)
-    server.send_message(msg)
-    server.quit()
-    print(f"📧 Alert email sent to {to_email}")
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+        print(f"📧 Alert email sent to {to_email}")
+    except smtplib.SMTPAuthenticationError:
+        print("❌ SMTP Authentication Failed. Check SENDER_EMAIL and SENDER_PASSWORD (App Password).")
+        raise Exception("Authentication failed. Please check your SMTP credentials.")
+    except Exception as e:
+        print(f"❌ SMTP Error: {str(e)}")
+        raise e
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
