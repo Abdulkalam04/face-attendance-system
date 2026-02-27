@@ -87,6 +87,7 @@ export default function TeacherDashboard() {
   const [sessionData, setSessionData] = useState({ duration: 5, message: "Class is live!" });
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
+  const [expiryTime, setExpiryTime] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]); // Students who scanned face
 
   // Date Filtering States
@@ -246,7 +247,7 @@ export default function TeacherDashboard() {
             message: res.data.message || "Class is live!",
             duration: res.data.duration || 5
           }));
-          if (res.data.expiry_time) updateTimer(res.data.expiry_time);
+          if (res.data.expiry_time) setExpiryTime(res.data.expiry_time);
         } else if (res.data && res.data.active === false) {
           setIsSessionActive(false);
         }
@@ -273,33 +274,55 @@ export default function TeacherDashboard() {
     setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
   };
 
+  // 1. VISUAL UI TIMER (Updates every 1s for smooth countdown)
   useEffect(() => {
-    let timerInterval;
+    let uiInterval;
+    if (isSessionActive && expiryTime) {
+      uiInterval = setInterval(() => {
+        const expiry = new Date(expiryTime).getTime();
+        const now = new Date().getTime();
+        const diff = expiry - now;
+
+        if (diff <= 0) {
+          setIsSessionActive(false);
+          setTimeLeft("");
+          clearInterval(uiInterval);
+          return;
+        }
+
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      }, 1000);
+    }
+    return () => clearInterval(uiInterval);
+  }, [isSessionActive, expiryTime]);
+
+  // 2. NETWORK HEARTBEAT (Updates every 5s to sync with server)
+  useEffect(() => {
+    let syncInterval;
     if (isSessionActive && teacherInfo.classId !== "NOT-ASSIGNED") {
-      timerInterval = setInterval(async () => {
+      syncInterval = setInterval(async () => {
         try {
           const res = await API.get(`/attendance/check-session/${teacherInfo.classId.toUpperCase()}`);
           if (res.data && res.data.active === true) {
-            if (res.data.expiry_time) updateTimer(res.data.expiry_time);
+            if (res.data.expiry_time) setExpiryTime(res.data.expiry_time);
           } else if (res.data && res.data.active === false) {
-            console.log("Session explicitly ended by server");
             setIsSessionActive(false);
             setTimeLeft("");
-            clearInterval(timerInterval);
+            clearInterval(syncInterval);
           }
         } catch (e) {
           if (e.response?.status === 404) {
             console.log("Session not found (404), ending locally");
             setIsSessionActive(false);
             setTimeLeft("");
-            clearInterval(timerInterval);
+            clearInterval(syncInterval);
           }
-          // On network errors (502, 503, timeout), we do NIL. 
-          // We keep the button visible until the server explicitly says no or we get a 404.
         }
       }, 5000);
     }
-    return () => clearInterval(timerInterval);
+    return () => clearInterval(syncInterval);
   }, [isSessionActive, teacherInfo.classId]);
 
   // ✅ NEW STATES FOR ATTENDANCE FLOW
@@ -326,7 +349,7 @@ export default function TeacherDashboard() {
       });
 
       if (res.data.expiry_time) {
-        updateTimer(res.data.expiry_time);
+        setExpiryTime(res.data.expiry_time);
       }
       alert(`Attendance session started for ${sessionData.duration} minutes!`);
     } catch (err) {

@@ -134,22 +134,26 @@ export default function StudentDashboard() {
     fetchDashboard();
   }, [activeClass, startDate, endDate]);
 
-  // 3. REFRESH SESSION STATUS EVERY 10 SECONDS
+  // 3. REFRESH SESSION STATUS EVERY 5 SECONDS
   useEffect(() => {
     if (!activeClass) return;
 
     const checkSession = async () => {
       try {
-        const res = await API.get(`/attendance/check-session/${activeClass}`);
-        setActiveSession(res.data.active ? res.data : null);
+        const cid = activeClass.toUpperCase().trim();
+        const res = await API.get(`/attendance/check-session/${cid}`);
+        if (res.data && res.data.active) {
+          setActiveSession(res.data);
+        } else {
+          setActiveSession(null);
+        }
       } catch (err) {
-        console.error("Session check failed", err);
         setActiveSession(null);
       }
     };
 
     checkSession();
-    const interval = setInterval(checkSession, 10000);
+    const interval = setInterval(checkSession, 5000);
     return () => clearInterval(interval);
   }, [activeClass]);
 
