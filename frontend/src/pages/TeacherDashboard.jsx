@@ -556,6 +556,7 @@ export default function TeacherDashboard() {
                 <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Clock size={20} /></div>
                 Live Attendance Control
               </h3>
+              <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest mt-[-1rem] mb-6 px-1">Active Class ID: {teacherInfo.classId.toUpperCase().trim()}</p>
 
               <div className="space-y-4">
                 {!isSessionActive ? (

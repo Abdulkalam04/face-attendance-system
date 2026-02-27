@@ -143,7 +143,8 @@ export default function StudentDashboard() {
         const cid = activeClass.trim().toUpperCase();
         const res = await API.get(`/attendance/check-session/${cid}`);
 
-        if (res.data && res.data.active === true) {
+        // Use truthy check instead of strict === true for better compatibility
+        if (res.data && (res.data.active === true || res.data.active === 1 || res.data.active === "true")) {
           setActiveSession(res.data);
         } else {
           setActiveSession(null);
@@ -327,10 +328,10 @@ export default function StudentDashboard() {
                 <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Camera size={20} /></div>
                 Biometric Verification
               </h3>
-
               {!activeSession ? (
                 <div className="text-center py-6 bg-slate-50/50 rounded-3xl border border-indigo-50">
                   <p className="text-gray-400 font-medium italic">No active session at the moment.</p>
+                  <p className="text-[9px] text-indigo-200 mt-2 font-black uppercase tracking-widest">Monitoring ID: {activeClass?.trim().toUpperCase()}</p>
                 </div>
               ) : (
                 <div className="text-center py-4">
