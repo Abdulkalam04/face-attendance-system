@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   User, Calendar, CheckCircle, Clock, LogOut,
   ShieldCheck, LayoutDashboard, ExternalLink,
-  IdCard, TrendingUp, Bell, Settings, BookOpen, Flame, Send, Trash2, Camera, FileDown
+  IdCard, TrendingUp, Bell, Settings, BookOpen, Flame, Send, Trash2, Camera, FileDown, RefreshCw
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
