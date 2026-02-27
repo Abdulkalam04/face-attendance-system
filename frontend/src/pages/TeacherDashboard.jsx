@@ -47,10 +47,12 @@ export default function TeacherDashboard() {
 
   const [teacherInfo, setTeacherInfo] = useState({
     name: localStorage.getItem("userName") || "Professor",
-    classId:
+    classId: (
       localStorage.getItem("classId") ||
       localStorage.getItem("class_name") ||
-      "NOT-ASSIGNED",
+      localStorage.getItem("class_id") ||
+      "NOT-ASSIGNED"
+    ).trim(),
     subject: localStorage.getItem("subject") || "General",
   });
 
@@ -232,34 +234,24 @@ export default function TeacherDashboard() {
   // ✅ CHECK IF ATTENDANCE SESSION IS ALREADY RUNNING (ON PAGE LOAD)
   useEffect(() => {
     const checkExistingSession = async () => {
-      if (!teacherInfo.classId || teacherInfo.classId === "NOT-ASSIGNED") return;
+      const cid = teacherInfo.classId;
+      if (!cid || cid === "NOT-ASSIGNED") return;
 
       try {
-        console.log("Checking session for:", teacherInfo.classId);
-        const res = await API.get(
-          `/attendance/check-session/${teacherInfo.classId.toUpperCase()}`
-        );
-        if (res.data.active) {
-          console.log("Found active session:", res.data);
+        const res = await API.get(`/attendance/check-session/${cid.toUpperCase()}`);
+        if (res.data && res.data.active) {
           setIsSessionActive(true);
           setSessionData(prev => ({
             ...prev,
             message: res.data.message || "Class is live!",
             duration: res.data.duration || prev.duration
           }));
-
-          if (res.data.expiry_time) {
-            updateTimer(res.data.expiry_time);
-          }
-        } else {
-          setIsSessionActive(false);
+          if (res.data.expiry_time) updateTimer(res.data.expiry_time);
         }
       } catch (err) {
-        // If 404, it just means no session is active, which is fine
-        setIsSessionActive(false);
+        // Silently fail, just means no session is active or network blip
       }
     };
-
     checkExistingSession();
   }, [teacherInfo.classId]);
 
@@ -285,22 +277,25 @@ export default function TeacherDashboard() {
       timerInterval = setInterval(async () => {
         try {
           const res = await API.get(`/attendance/check-session/${teacherInfo.classId.toUpperCase()}`);
-          if (!res.data.active) {
-            console.log("Session ended on server");
+          if (res.data && res.data.active) {
+            if (res.data.expiry_time) updateTimer(res.data.expiry_time);
+          } else {
+            console.log("Session explicitly ended by server");
             setIsSessionActive(false);
             setTimeLeft("");
             clearInterval(timerInterval);
-          } else if (res.data.expiry_time) {
-            updateTimer(res.data.expiry_time);
           }
         } catch (e) {
-          // If the network fails or session is gone (404), end it locally
           if (e.response?.status === 404) {
+            console.log("Session not found (404), ending locally");
             setIsSessionActive(false);
             setTimeLeft("");
+            clearInterval(timerInterval);
           }
+          // On network errors (502, 503, timeout), we do NIL. 
+          // We keep the button visible until the server explicitly says no or we get a 404.
         }
-      }, 3000); // Polling every 3 seconds instead of 1 is safer for Free Tier
+      }, 5000);
     }
     return () => clearInterval(timerInterval);
   }, [isSessionActive, teacherInfo.classId]);
@@ -318,18 +313,24 @@ export default function TeacherDashboard() {
   // ✅ START ATTENDANCE SESSION
   const startAttendanceSession = async () => {
     try {
+      // 1. First set some local feedback
+      setIsSessionActive(true);
+
       const res = await API.post("/attendance/start-session", {
         classId: teacherInfo.classId,
         subject: teacherInfo.subject,
         duration: sessionData.duration,
         message: sessionData.message
       });
-      setIsSessionActive(true);
+
       if (res.data.expiry_time) {
         updateTimer(res.data.expiry_time);
       }
       alert(`Attendance session started for ${sessionData.duration} minutes!`);
-    } catch (err) { alert("Failed to start session."); }
+    } catch (err) {
+      setIsSessionActive(false);
+      alert("Failed to start session.");
+    }
   };
   // ✅ STOP ATTENDANCE SESSION
   const stopAttendanceSession = async () => {
