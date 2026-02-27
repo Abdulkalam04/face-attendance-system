@@ -156,89 +156,91 @@ export default function Navbar() {
           </div>
 
           {/* ACTION CLUSTER (DESKTOP) */}
-          <div className="hidden lg:flex items-center gap-3">
-            <div className="flex items-center gap-4 pr-4 border-r border-indigo-100">
+          {/* ACTION CLUSTER (Refined for Mobile & Desktop) */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* THEME TOGGLE (ALWAYS VISIBLE) */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 sm:p-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300"
+              title={theme === "light" ? "Dark Mode" : "Light Mode"}
+            >
+              {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+
+            {/* NOTIFICATION HUB (ALWAYS VISIBLE) */}
+            <div className="relative">
               <button
-                onClick={toggleTheme}
-                className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300"
-                title={theme === "light" ? "Dark Mode" : "Light Mode"}
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`p-2 sm:p-2.5 rounded-xl transition-all duration-300 relative ${showNotifications ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-indigo-50 text-indigo-600 hover:bg-slate-200"}`}
               >
-                {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
 
-              <div className="relative">
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className={`p-2.5 rounded-xl transition-all duration-300 relative ${showNotifications ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-indigo-50 text-indigo-600 hover:bg-slate-200"}`}
-                >
-                  <Bell size={18} />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* NOTIFICATION DROPDOWN */}
-                <AnimatePresence>
-                  {showNotifications && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="notification-dropdown absolute right-0 mt-4 w-80 bg-white/95 backdrop-blur-2xl border border-indigo-100 rounded-[2rem] shadow-[0_25px_60px_rgba(79,70,229,0.25)] overflow-hidden origin-top-right z-50"
-                    >
-                      <div className="notification-header p-5 border-b border-indigo-50 flex items-center justify-between bg-indigo-50/30">
-                        <span className="font-black text-xs uppercase tracking-widest text-indigo-900">Notifications</span>
-                        {unreadCount > 0 && (
-                          <button
-                            onClick={markAllAsRead}
-                            className="text-[10px] font-black text-indigo-600 hover:underline uppercase tracking-tighter"
+              {/* NOTIFICATION DROPDOWN */}
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="notification-dropdown absolute right-[-50px] sm:right-0 mt-4 w-72 sm:w-80 bg-white/95 backdrop-blur-2xl border border-indigo-100 rounded-[2rem] shadow-[0_25px_60px_rgba(79,70,229,0.25)] overflow-hidden origin-top-right z-50"
+                  >
+                    <div className="notification-header p-4 border-b border-indigo-50 flex items-center justify-between bg-indigo-50/30">
+                      <span className="font-black text-[10px] sm:text-xs uppercase tracking-widest text-indigo-900">Notifications</span>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-[9px] sm:text-[10px] font-black text-indigo-600 hover:underline uppercase tracking-tighter"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="notification-list max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {notifications.length === 0 ? (
+                        <div className="py-10 text-center">
+                          <Bell className="mx-auto text-slate-200 mb-3" size={28} />
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inbox Zero</p>
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`notification-item p-4 border-b border-slate-50 hover:bg-indigo-50/50 transition-colors cursor-pointer relative ${!n.read ? "bg-indigo-50/20" : ""}`}
                           >
-                            Mark all as read
-                          </button>
-                        )}
-                      </div>
-                      <div className="notification-list max-h-[350px] overflow-y-auto custom-scrollbar">
-                        {notifications.length === 0 ? (
-                          <div className="py-12 text-center">
-                            <Bell className="mx-auto text-slate-200 mb-3" size={32} />
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Inbox Zero</p>
-                          </div>
-                        ) : (
-                          notifications.map((n) => (
-                            <div
-                              key={n.id}
-                              className={`notification-item p-4 border-b border-slate-50 hover:bg-indigo-50/50 transition-colors cursor-pointer relative ${!n.read ? "bg-indigo-50/20" : ""}`}
-                            >
-                              {!n.read && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-indigo-600 rounded-full" />}
-                              <div className="flex gap-3">
-                                <span className="text-2xl">{n.icon}</span>
-                                <div>
-                                  <h4 className="font-black text-slate-900 text-sm leading-none mb-1">{n.title}</h4>
-                                  <p className="text-xs text-slate-500 font-medium leading-relaxed">{n.content}</p>
-                                  <p className="text-[9px] font-black text-indigo-400 uppercase mt-2">{n.time}</p>
-                                </div>
+                            {!n.read && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-indigo-600 rounded-full" />}
+                            <div className="flex gap-3">
+                              <span className="text-xl sm:text-2xl">{n.icon}</span>
+                              <div>
+                                <h4 className="font-black text-slate-900 text-[12px] sm:text-sm leading-none mb-1">{n.title}</h4>
+                                <p className="text-[10px] sm:text-xs text-slate-500 font-medium leading-relaxed">{n.content}</p>
+                                <p className="text-[9px] font-black text-indigo-400 uppercase mt-1.5">{n.time}</p>
                               </div>
                             </div>
-                          ))
-                        )}
-                      </div>
-                      <div className="notification-footer p-4 bg-slate-50 text-center">
-                        <button
-                          className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors"
-                          onClick={() => setNotifications([])}
-                        >
-                          Clear All History
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="notification-footer p-3 bg-slate-50 text-center">
+                      <button
+                        className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors"
+                        onClick={() => setNotifications([])}
+                      >
+                        Clear History
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/50 p-1.5 rounded-2xl border border-white shadow-sm pl-4">
+            {/* USER PROFILE (DESKTOP ONLY) */}
+            <div className="hidden lg:flex items-center gap-3 bg-white/50 p-1.5 rounded-2xl border border-white shadow-sm pl-4">
               <div className="flex flex-col items-end">
                 <span className="text-xs font-black text-slate-900 leading-none">{userName}</span>
                 <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mt-1">{role} Portal</span>
@@ -248,21 +250,22 @@ export default function Navbar() {
               </div>
             </div>
 
+            {/* LOGOUT BUTTON (DESKTOP ONLY) */}
             <button
               onClick={handleLogout}
-              className="p-3.5 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white hover:shadow-lg transition-all"
+              className="hidden lg:flex p-3.5 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white hover:shadow-lg transition-all"
             >
               <LogOut size={20} />
             </button>
-          </div>
 
-          {/* MOBILE TOGGLE */}
-          <button
-            onClick={() => setMobileMenu(!mobileMenu)}
-            className="lg:hidden p-4 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-all"
-          >
-            {mobileMenu ? <X size={24} /> : <Menu size={24} />}
-          </button>
+            {/* MOBILE TOGGLE */}
+            <button
+              onClick={() => setMobileMenu(!mobileMenu)}
+              className="lg:hidden p-3.5 sm:p-4 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-all"
+            >
+              {mobileMenu ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </motion.nav>
       </div>
 
@@ -319,8 +322,12 @@ export default function Navbar() {
               </div>
 
               <div className="mt-10 flex gap-4">
-                <button className="flex-1 bg-slate-900 text-white p-5 rounded-3xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3">
-                  <Settings size={20} /> Settings
+                <button
+                  onClick={toggleTheme}
+                  className="flex-1 bg-slate-900 text-white p-5 rounded-3xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3"
+                >
+                  {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+                  {theme === "light" ? "Dark Mode" : "Light Mode"}
                 </button>
                 <button
                   onClick={handleLogout}
