@@ -141,25 +141,22 @@ export default function StudentDashboard() {
     const checkSession = async () => {
       try {
         const cid = activeClass.trim().toUpperCase();
-        console.log(`Checking session for student class: [${cid}]`);
         const res = await API.get(`/attendance/check-session/${cid}`);
 
-        if (res.data && res.data.active) {
-          console.log("Active session found for student:", res.data);
+        if (res.data && res.data.active === true) {
           setActiveSession(res.data);
         } else {
           setActiveSession(null);
         }
       } catch (err) {
-        // 404 or network error
-        if (activeSession) setActiveSession(null);
+        setActiveSession(null);
       }
     };
 
     checkSession();
     const interval = setInterval(checkSession, 5000);
     return () => clearInterval(interval);
-  }, [activeClass, activeSession]); // added activeSession to avoid stale state issues in callback
+  }, [activeClass]);
 
   const handleClassChange = (cid) => {
     setActiveClass(cid);
