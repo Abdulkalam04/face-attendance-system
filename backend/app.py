@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 import pickle
 import face_recognition
@@ -121,9 +122,9 @@ def reset_system():
             os.remove(PICKLE_PATH)
             
         # 3. Clear Uploaded Timetables
-        if os.path.exists(UPLOAD_FOLDER):
-            for filename in os.listdir(UPLOAD_FOLDER):
-                file_path = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.exists(TIMETABLE_DIR):
+            for filename in os.listdir(TIMETABLE_DIR):
+                file_path = os.path.join(TIMETABLE_DIR, filename)
                 try:
                     if os.path.isfile(file_path) or os.path.islink(file_path):
                         os.unlink(file_path)
