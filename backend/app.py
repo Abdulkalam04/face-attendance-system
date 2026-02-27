@@ -67,17 +67,21 @@ MAX_DISTANCE_METERS = 10000
 
 # ---------------- EMAIL CONFIG ----------------
 # It's recommended to set these in your Render or Local Environment Variables
-SMTP_SERVER = os.environ.get('SMTP_SERVER', "smtp.gmail.com")
+# Using .strip() to prevent accidental spaces from environment variables
+SMTP_SERVER = os.environ.get('SMTP_SERVER', "smtp.gmail.com").strip()
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "abdulka0440r@gmail.com")
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "abdulka0440r@gmail.com").strip()
 # IMPORTANT: Generate a 16-character "App Password" from your Google Account
-SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nvbn vzpr vkoo khgn") 
+# .replace(" ", "") ensures the 16-character code works even if spaces were kept
+SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nvbn vzpr vkoo khgn").strip().replace(" ", "")
 
 def send_email_alert(to_email, student_name, percentage, teacher_name="Professor", teacher_email=None):
     """Send a low-attendance alert email. Reflects the teacher's identity."""
     msg = MIMEMultipart()
-    # ✅ DYNAMIC SENDER: Shows Teacher's Name but uses System Email for delivery
-    msg['From'] = f"{teacher_name} (via Attendify) <{SENDER_EMAIL}>"
+    
+    # ✅ CLEANER HEADERS: Using quotes for the name ensures special chars don't break the header
+    display_name = f"{teacher_name} (via Attendify)"
+    msg['From'] = f'"{display_name}" <{SENDER_EMAIL}>'
     msg['To'] = to_email
     # ✅ REPLY-TO: If student replies, it goes to the teacher, not the system
     if teacher_email:
@@ -100,17 +104,20 @@ College Administration
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        # Added a 15-second timeout to prevent the whole app from hanging if SMTP is slow
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15) as server:
             server.starttls()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
         print(f"📧 Alert email sent to {to_email}")
     except smtplib.SMTPAuthenticationError:
-        print("❌ SMTP Authentication Failed. Check SENDER_EMAIL and SENDER_PASSWORD (App Password).")
-        raise Exception("Authentication failed. Please check your SMTP credentials.")
+        print("❌ SMTP Authentication Failed. This usually means the App Password is invalid or expired.")
+        raise Exception("Authentication failed. Please check your App Password settings in Google.")
     except Exception as e:
-        print(f"❌ SMTP Error: {str(e)}")
-        raise e
+        import traceback
+        print(f"❌ SMTP Error for {to_email}:")
+        traceback.print_exc() # This shows the FULL error in Render logs
+        raise Exception(f"Mail Error: {str(e)}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
@@ -920,6 +927,7 @@ def check_and_send_low_attendance_alerts(class_id, force=False):
     force=True: bypasses the 7-day cooldown and the min-3-lectures guard.
                 Used when the teacher manually clicks 'Send Manual Alert'.
     """
+    class_id = class_id.strip().upper()
     now = datetime.now()
     month_start = now.replace(day=1).strftime("%Y-%m-%d")
     month_end = now.strftime("%Y-%m-%d")
