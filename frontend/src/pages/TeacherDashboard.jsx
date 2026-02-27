@@ -232,32 +232,35 @@ export default function TeacherDashboard() {
   // ✅ CHECK IF ATTENDANCE SESSION IS ALREADY RUNNING (ON PAGE LOAD)
   useEffect(() => {
     const checkExistingSession = async () => {
+      if (!teacherInfo.classId || teacherInfo.classId === "NOT-ASSIGNED") return;
+
       try {
+        console.log("Checking session for:", teacherInfo.classId);
         const res = await API.get(
-          `/attendance/check-session/${teacherInfo.classId}`
+          `/attendance/check-session/${teacherInfo.classId.toUpperCase()}`
         );
         if (res.data.active) {
+          console.log("Found active session:", res.data);
           setIsSessionActive(true);
           setSessionData(prev => ({
             ...prev,
-            message: res.data.message || "Class is live!"
+            message: res.data.message || "Class is live!",
+            duration: res.data.duration || prev.duration
           }));
 
           if (res.data.expiry_time) {
             updateTimer(res.data.expiry_time);
           }
+        } else {
+          setIsSessionActive(false);
         }
       } catch (err) {
-        console.error("Session check failed", err);
+        // If 404, it just means no session is active, which is fine
+        setIsSessionActive(false);
       }
     };
 
-    if (
-      teacherInfo.classId &&
-      teacherInfo.classId !== "NOT-ASSIGNED"
-    ) {
-      checkExistingSession();
-    }
+    checkExistingSession();
   }, [teacherInfo.classId]);
 
   const updateTimer = (expiryIso) => {
@@ -278,12 +281,12 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     let timerInterval;
-    if (isSessionActive) {
+    if (isSessionActive && teacherInfo.classId !== "NOT-ASSIGNED") {
       timerInterval = setInterval(async () => {
-        // Re-check session status from server occasionally
         try {
-          const res = await API.get(`/attendance/check-session/${teacherInfo.classId}`);
+          const res = await API.get(`/attendance/check-session/${teacherInfo.classId.toUpperCase()}`);
           if (!res.data.active) {
+            console.log("Session ended on server");
             setIsSessionActive(false);
             setTimeLeft("");
             clearInterval(timerInterval);
@@ -291,9 +294,13 @@ export default function TeacherDashboard() {
             updateTimer(res.data.expiry_time);
           }
         } catch (e) {
-          console.error("Timer update failed", e);
+          // If the network fails or session is gone (404), end it locally
+          if (e.response?.status === 404) {
+            setIsSessionActive(false);
+            setTimeLeft("");
+          }
         }
-      }, 1000);
+      }, 3000); // Polling every 3 seconds instead of 1 is safer for Free Tier
     }
     return () => clearInterval(timerInterval);
   }, [isSessionActive, teacherInfo.classId]);
