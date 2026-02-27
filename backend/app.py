@@ -73,11 +73,16 @@ SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "abdulka0440r@gmail.com")
 # IMPORTANT: Generate a 16-character "App Password" from your Google Account
 SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nvbn vzpr vkoo khgn") 
 
-def send_email_alert(to_email, student_name, percentage):
-    """Send a low-attendance alert email. Raises on failure so caller knows."""
+def send_email_alert(to_email, student_name, percentage, teacher_name="Professor", teacher_email=None):
+    """Send a low-attendance alert email. Reflects the teacher's identity."""
     msg = MIMEMultipart()
-    msg['From'] = SENDER_EMAIL
+    # ✅ DYNAMIC SENDER: Shows Teacher's Name but uses System Email for delivery
+    msg['From'] = f"{teacher_name} (via Attendify) <{SENDER_EMAIL}>"
     msg['To'] = to_email
+    # ✅ REPLY-TO: If student replies, it goes to the teacher, not the system
+    if teacher_email:
+        msg['Reply-To'] = teacher_email
+    
     msg['Subject'] = f"LOW ATTENDANCE ALERT: {student_name}"
 
     body = f"""
@@ -170,7 +175,7 @@ def forgot_password():
     # Send email
     try:
         msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
+        msg['From'] = f"Attendify Security <{SENDER_EMAIL}>"
         msg['To'] = email
         msg['Subject'] = "Password Reset Request - Attendify"
 
@@ -919,6 +924,11 @@ def check_and_send_low_attendance_alerts(class_id, force=False):
     month_start = now.replace(day=1).strftime("%Y-%m-%d")
     month_end = now.strftime("%Y-%m-%d")
 
+    # Fetch teacher info to personalize the sender
+    teacher = Teacher.query.filter_by(teacher_id=class_id).first()
+    t_name = teacher.name if teacher else "Professor"
+    t_email = teacher.email if teacher else SENDER_EMAIL
+
     # 1. Gather all student roll numbers in this class
     enrollments = ClassEnrollment.query.filter_by(class_id=class_id).all()
     student_rolls = [e.student_roll for e in enrollments]
@@ -977,7 +987,13 @@ def check_and_send_low_attendance_alerts(class_id, force=False):
 
         if percentage < 75:
             try:
-                send_email_alert(student.email, student.name, round(percentage, 1))
+                send_email_alert(
+                    student.email, 
+                    student.name, 
+                    round(percentage, 1),
+                    teacher_name=t_name,
+                    teacher_email=t_email
+                )
                 student.last_alert_date = now.isoformat()
                 alerts_sent += 1
             except Exception as mail_err:
