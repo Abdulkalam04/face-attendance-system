@@ -329,9 +329,15 @@ export default function StudentDashboard() {
                 Biometric Verification
               </h3>
               {!activeSession ? (
-                <div className="text-center py-6 bg-slate-50/50 rounded-3xl border border-indigo-50">
-                  <p className="text-gray-400 font-medium italic">No active session at the moment.</p>
-                  <p className="text-[9px] text-indigo-200 mt-2 font-black uppercase tracking-widest">Monitoring ID: {activeClass?.trim().toUpperCase()}</p>
+                <div className="text-center py-6 bg-slate-50/50 rounded-3xl border border-indigo-50 px-4">
+                  <p className="text-gray-400 font-medium italic mb-3">No active session at the moment.</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all border border-indigo-100 mb-2"
+                  >
+                    <RefreshCw size={12} className="animate-spin-hover" /> Refresh Status
+                  </button>
+                  <p className="text-[9px] text-indigo-200 font-black uppercase tracking-widest block">Monitoring ID: {activeClass?.trim().toUpperCase()}</p>
                 </div>
               ) : (
                 <div className="text-center py-4">

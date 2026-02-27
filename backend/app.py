@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import io
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import math
 import smtplib
 from email.mime.text import MIMEText
@@ -41,6 +41,11 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 db = SQLAlchemy(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+# ---------------- PING ENDPOINT ----------------
+@app.route('/api/ping', methods=['GET'])
+def ping():
+    return jsonify({"status": "online", "timestamp": datetime.now(timezone.utc).isoformat()}), 200
 
 # ---------------- PICKLE CONFIG ----------------
 # On Render, use the persistent disk path. Locally, use current directory.
@@ -1200,16 +1205,14 @@ def check_session(class_id):
     if session:
         # Check if session has expired
         if "expiry_time" in session:
-            # Parse as UTC (with Z)
+            # Parse as UTC
             expiry_str = session["expiry_time"]
             if not expiry_str.endswith('Z'):
-                 expiry_str += 'Z'
+                expiry_str += 'Z'
             
-            # Using datetime.fromisoformat and making it UTC aware
             expiry = datetime.fromisoformat(expiry_str.replace('Z', '+00:00'))
             if datetime.now(timezone.utc) > expiry:
                 active_sessions.pop(class_id, None)
-                # 📢 Check for low attendance when session expires
                 check_and_send_low_attendance_alerts(class_id)
                 return jsonify({"active": False, "message": "Session expired."})
         return jsonify(session)
@@ -1242,8 +1245,12 @@ def verify_face_attendance():
 
         # Check for expiry
         if "expiry_time" in session:
-            expiry = datetime.fromisoformat(session["expiry_time"])
-            if datetime.now() > expiry:
+            expiry_str = session["expiry_time"]
+            if not expiry_str.endswith('Z'):
+                 expiry_str += 'Z'
+            expiry = datetime.fromisoformat(expiry_str.replace('Z', '+00:00'))
+            
+            if datetime.now(timezone.utc) > expiry:
                 active_sessions.pop(class_id, None)
                 return jsonify({"success": False, "message": "Attendance session has ended."}), 403
 
@@ -1339,7 +1346,6 @@ def start_session():
     db.session.commit()
 
     # Calculate expiry using UTC
-    from datetime import timezone
     now_utc = datetime.now(timezone.utc)
     
     session_data = {

@@ -351,8 +351,9 @@ export default function TeacherDashboard() {
       // 1. First set some local feedback
       setIsSessionActive(true);
 
+      const cid = teacherInfo.classId.toUpperCase().trim();
       const res = await API.post("/attendance/start-session", {
-        classId: teacherInfo.classId,
+        classId: cid,
         subject: teacherInfo.subject,
         duration: sessionData.duration,
         message: sessionData.message
@@ -361,7 +362,7 @@ export default function TeacherDashboard() {
       if (res.data.expiry_time) {
         setExpiryTime(res.data.expiry_time);
       }
-      alert(`Attendance session started for ${sessionData.duration} minutes!`);
+      alert(`Attendance session started for Class ID: ${cid} (${sessionData.duration} minutes)`);
     } catch (err) {
       setIsSessionActive(false);
       alert("Failed to start session.");
