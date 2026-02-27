@@ -108,6 +108,34 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 def health_check():
     return jsonify({"status": "online", "message": "Face Attendance API is running"}), 200
 
+# ---------------- ADMIN RESET SYSTEM ----------------
+@app.route('/api/admin/reset-system', methods=['POST'])
+def reset_system():
+    try:
+        # 1. Clear Database Tables
+        db.drop_all()
+        db.create_all()
+        
+        # 2. Delete Face Encodings (Pickle)
+        if os.path.exists(PICKLE_PATH):
+            os.remove(PICKLE_PATH)
+            
+        # 3. Clear Uploaded Timetables
+        if os.path.exists(UPLOAD_FOLDER):
+            for filename in os.listdir(UPLOAD_FOLDER):
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    print(f'Failed to delete {file_path}. Reason: {e}')
+
+        return jsonify({"message": "System has been completely reset. All data cleared."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
     data = request.json

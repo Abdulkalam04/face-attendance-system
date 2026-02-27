@@ -23,7 +23,9 @@ import {
   Download,
   FileDown,
   Trophy,
-  Medal
+  Medal,
+  Settings,
+  AlertTriangle
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import API from "../api";
@@ -374,6 +376,25 @@ export default function TeacherDashboard() {
       alert(err.response?.data?.error || "Failed to send alerts. Check if SMTP is configured correctly.");
     } finally {
       setSendingAlerts(false);
+    }
+  };
+
+  const handleResetSystem = async () => {
+    const confirm1 = window.confirm("🚨 CRITICAL WARNING: This will PERMANENTLY delete ALL students, teachers, attendance logs, and bimoetric data. Are you sure?");
+    if (!confirm1) return;
+
+    const confirm2 = window.confirm("LAST CHANCE: Everything will be reset to defaults. Proceed?");
+    if (!confirm2) return;
+
+    try {
+      setUploading(true); // use a loading state
+      await API.post("/admin/reset-system");
+      alert("System Reset Complete! Logged out for safety.");
+      handleLogout();
+    } catch (err) {
+      alert("Reset failed: " + (err.response?.data?.error || "Server error"));
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -865,6 +886,26 @@ export default function TeacherDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* DANGER ZONE - HIDDEN BY DEFAULT / ACCESS THROUGH SETTINGS LOGIC */}
+        <div className="mt-12 mb-20 p-8 bg-rose-50 border border-rose-200 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex gap-4 items-center text-center md:text-left">
+            <div className="p-4 bg-rose-500 text-white rounded-2xl shadow-lg">
+              <AlertTriangle size={32} />
+            </div>
+            <div>
+              <h4 className="text-xl font-black text-slate-900">Danger Zone</h4>
+              <p className="text-rose-600 font-medium text-sm">Delete all system data and start from scratch.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleResetSystem}
+            className="group flex items-center gap-3 px-8 py-4 bg-rose-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-200"
+          >
+            <Settings size={20} className="group-hover:rotate-90 transition-transform" />
+            Reset Entire System
+          </button>
         </div>
 
       </div>
