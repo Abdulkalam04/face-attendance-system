@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 import pickle
+import socket
 import face_recognition
 from flask import Flask, request, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
@@ -104,19 +105,32 @@ College Administration
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        # Added a 15-second timeout to prevent the whole app from hanging if SMTP is slow
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15) as server:
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.send_message(msg)
-        print(f"📧 Alert email sent to {to_email}")
+        # ✅ TRY PORT 465 (SSL) FIRST - More reliable on Render/Cloud
+        print(f"🔄 Attempting Port 465 SSL for {to_email}...")
+        try:
+            # Force IPv4 to prevent "Network is unreachable" errors
+            with smtplib.SMTP_SSL(SMTP_SERVER, 465, timeout=15) as server:
+                server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                server.send_message(msg)
+            print(f"📧 Alert email sent to {to_email} via Port 465")
+            return
+        except (smtplib.SMTPException, socket.error) as ssl_err:
+            print(f"⚠️ Port 465 failed, trying fallback Port 587: {ssl_err}")
+            
+            # ✅ FALLBACK TO PORT 587 (TLS)
+            with smtplib.SMTP(SMTP_SERVER, 587, timeout=15) as server:
+                server.starttls()
+                server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                server.send_message(msg)
+            print(f"📧 Alert email sent to {to_email} via Port 587")
+
     except smtplib.SMTPAuthenticationError:
         print("❌ SMTP Authentication Failed. This usually means the App Password is invalid or expired.")
         raise Exception("Authentication failed. Please check your App Password settings in Google.")
     except Exception as e:
         import traceback
-        print(f"❌ SMTP Error for {to_email}:")
-        traceback.print_exc() # This shows the FULL error in Render logs
+        print(f"❌ Final SMTP Error for {to_email}:")
+        traceback.print_exc()
         raise Exception(f"Mail Error: {str(e)}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
