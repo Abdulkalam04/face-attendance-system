@@ -49,15 +49,17 @@ export default function FaceScanner() {
     const canvas = canvasRef.current;
     const video = videoRef.current;
 
-    // Set canvas size to match video stream
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Set optimized size for face recognition (640px is ideal)
+    const maxWidth = 640;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
     const ctx = canvas.getContext("2d");
 
     // Mirror the image for the backend if needed (optional)
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(async (blob) => {
       const formData = new FormData();
@@ -76,7 +78,7 @@ export default function FaceScanner() {
       } finally {
         setScanning(false);
       }
-    }, "image/jpeg", 0.9);
+    }, "image/jpeg", 0.8);
   };
 
   return (

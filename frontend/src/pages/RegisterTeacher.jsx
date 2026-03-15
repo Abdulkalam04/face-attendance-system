@@ -57,10 +57,15 @@ export default function RegisterTeacher() {
   const capturePhoto = () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg");
+
+    // Set optimized size for face recognition (640px is ideal)
+    const maxWidth = 640;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
+
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
     setCapturedImage(dataUrl);
     if (video.srcObject) {
       video.srcObject.getTracks().forEach((track) => track.stop());

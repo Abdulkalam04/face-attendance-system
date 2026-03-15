@@ -232,9 +232,12 @@ export default function ScanFace() {
     const video = videoRef.current;
     const ctx = canvas.getContext("2d");
 
-    // Capture at full video resolution (640x480) for better backend recognition
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    // Set optimized size for face recognition (640px is ideal)
+    const maxWidth = 640;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(async (blob) => {
