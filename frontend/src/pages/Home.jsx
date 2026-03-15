@@ -189,26 +189,7 @@ export default function Home() {
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform opacity-70" />
           </button>
 
-          {/* Trusted By Bar */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="pt-10 border-t border-indigo-500/10 w-full"
-          >
-            <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">Trusted Infrastructure Partner</p>
-            <div className="flex flex-wrap justify-start gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-              <div className="flex items-center gap-2 text-slate-400 font-bold tracking-tighter text-xl">
-                <School size={20} /> MIT <span className="text-xs font-normal tracking-normal opacity-50">Labs</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-400 font-bold tracking-tighter text-xl">
-                <ShieldCheck size={20} /> STANFORD <span className="text-xs font-normal tracking-normal opacity-50">Secure</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-400 font-bold tracking-tighter text-xl text-indigo-400 opacity-60">
-                OXFORD <span className="text-xs font-normal tracking-normal opacity-50">Vault</span>
-              </div>
-            </div>
-          </motion.div>
+
         </motion.div>
 
         {/* Right Illustration: The Cybernetic HUD */}
