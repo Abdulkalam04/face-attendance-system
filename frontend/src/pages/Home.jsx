@@ -99,26 +99,37 @@ export default function Home() {
       <section
         id="home"
         className="min-h-screen flex flex-col justify-center lg:flex-row 
-                   items-center px-6 md:px-12 lg:px-20 gap-16 lg:gap-10 w-full 
-                   max-w-[1440px] mx-auto py-20 relative z-10"
+                   items-center px-4 sm:px-8 md:px-12 lg:px-20 gap-12 lg:gap-10 w-full 
+                   max-w-[1440px] mx-auto py-12 md:py-20 relative z-10"
       >
         {/* Left Typography & Action Content */}
         <motion.div
-          className="flex-1 flex flex-col items-start justify-center space-y-8 max-w-2xl"
-          initial={{ x: -60, opacity: 0 }}
+          className="flex-1 flex flex-col items-start text-left space-y-6 md:space-y-8 max-w-2xl"
+          initial={{ x: -40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          {/* Badge */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-[0.2em] backdrop-blur-sm"
-          >
-            <ShieldCheck size={16} className="animate-pulse" /> AI Biometric Nexus
-          </motion.div>
+          {/* Badge & Status Area */}
+          <div className="flex flex-col items-start gap-4">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-[0.2em] backdrop-blur-sm"
+            >
+              <ShieldCheck size={16} className="animate-pulse" /> AI Biometric Nexus
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-[10px] text-emerald-500 font-bold uppercase tracking-widest"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              Live System Status: Operational
+            </motion.div>
+          </div>
 
           {/* Fluid Typing Heading (With proper padding to fix 'e' clipping) */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white mb-2 py-1 pr-4">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white mb-2 py-1 lg:pr-4">
             <span className="bg-gradient-to-r from-indigo-700 to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm px-2">
               {firstWord}
             </span>
@@ -137,7 +148,7 @@ export default function Home() {
 
           </h1>
 
-          <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl lg:text-2xl max-w-lg leading-relaxed font-light">
+          <p className="text-slate-700 dark:text-slate-400 text-base sm:text-lg md:text-xl lg:text-2xl max-w-lg leading-relaxed font-light">
             Next-generation <span className="text-indigo-600 dark:text-indigo-400 font-bold border-b-2 border-indigo-500/20">automated attendance</span>.
             Precision facial mapping powered by neural networks. Seamless integration, absolute security.
           </p>
@@ -177,6 +188,27 @@ export default function Home() {
             Explore System Architecture
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform opacity-70" />
           </button>
+
+          {/* Trusted By Bar */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="pt-10 border-t border-indigo-500/10 w-full"
+          >
+            <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-6">Trusted Infrastructure Partner</p>
+            <div className="flex flex-wrap justify-start gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+              <div className="flex items-center gap-2 text-slate-400 font-bold tracking-tighter text-xl">
+                <School size={20} /> MIT <span className="text-xs font-normal tracking-normal opacity-50">Labs</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-400 font-bold tracking-tighter text-xl">
+                <ShieldCheck size={20} /> STANFORD <span className="text-xs font-normal tracking-normal opacity-50">Secure</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-400 font-bold tracking-tighter text-xl text-indigo-400 opacity-60">
+                OXFORD <span className="text-xs font-normal tracking-normal opacity-50">Vault</span>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Right Illustration: The Cybernetic HUD */}
@@ -210,6 +242,22 @@ export default function Home() {
 
             {/* Glowing Face Image */}
             <div className="relative w-full overflow-hidden rounded-2xl bg-transparent pb-4 pt-4 px-4 flex justify-center">
+              {/* Floating Tech Data Tag */}
+              <motion.div
+                animate={{ y: [0, -10, 0], x: [0, 5, 0] }}
+                transition={{ repeat: Infinity, duration: 5 }}
+                className="absolute top-10 right-0 z-40 px-3 py-1.5 bg-indigo-600/10 backdrop-blur-md border border-indigo-500/30 rounded-lg text-[10px] font-mono text-indigo-400 hidden md:block"
+              >
+                UID: 82.21.09
+              </motion.div>
+              <motion.div
+                animate={{ y: [0, 10, 0], x: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 6 }}
+                className="absolute bottom-10 left-0 z-40 px-3 py-1.5 bg-blue-600/10 backdrop-blur-md border border-blue-500/30 rounded-lg text-[10px] font-mono text-blue-400 hidden md:block"
+              >
+                LATENCY: 12ms
+              </motion.div>
+
               {animationData && (
                 <motion.div
                   className="w-full max-w-[450px] relative z-10"
