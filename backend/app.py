@@ -132,12 +132,26 @@ def send_email_alert(to_email, student_name, percentage, teacher_name="Professor
                 print(f"📧 SUCCESS: Email sent via Resend API")
                 return
             else:
-                print(f"⚠️ Resend API failed (Status {response.status_code}): {response.text}")
-                # Fall through to SMTP if API fails
+                error_info = response.json() if response.headers.get('Content-Type') == 'application/json' else {"message": response.text}
+                error_msg = error_info.get('message', response.text)
+                
+                print(f"⚠️ Resend API failed (Status {response.status_code}): {error_msg}")
+                
+                # If it's 403, it's the most common "onboarding domain" restriction
+                if response.status_code == 403:
+                    raise Exception(f"Resend Error: {error_msg}. Tip: Onboarding domain only allows sending to your own email. Verify a domain at resend.com.")
+                
+                # On Cloud platforms (Render/Local restricted), SMTP will just timeout. 
+                # Better to show the Resend error than wait 60s for a timeout.
+                raise Exception(f"Resend API Error: {error_msg}")
         except Exception as e:
+            # If it's our own raised Exception, pass it up
+            if "Resend" in str(e):
+                raise e
             print(f"❌ Resend Exception: {str(e)}")
 
     # ✅ FALLBACK TO SMTP (For Local Development)
+    # This only runs if RESEND_API_KEY is missing or a low-level network error occurred with requests
     import time
     def get_ipv4(host):
         try: return socket.gethostbyname(host)
