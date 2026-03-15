@@ -137,21 +137,20 @@ def send_email_alert(to_email, student_name, percentage, teacher_name="Professor
                 
                 print(f"⚠️ Resend API failed (Status {response.status_code}): {error_msg}")
                 
-                # If it's 403, it's the most common "onboarding domain" restriction
-                if response.status_code == 403:
-                    raise Exception(f"Resend Error: {error_msg}. Tip: Onboarding domain only allows sending to your own email. Verify a domain at resend.com.")
+                # If on Cloud (Render/Vercel), we MUST raise because SMTP will hide errors and timeout
+                if os.environ.get('RENDER') or os.environ.get('VERCEL'):
+                    if response.status_code == 403:
+                         raise Exception(f"Resend Error: {error_msg}. Tip: Onboarding domain only allows sending to your own email. Verify a domain at resend.com.")
+                    raise Exception(f"Resend API Error: {error_msg}")
                 
-                # On Cloud platforms (Render/Local restricted), SMTP will just timeout. 
-                # Better to show the Resend error than wait 60s for a timeout.
-                raise Exception(f"Resend API Error: {error_msg}")
+                # On Localhost, we log the error and let it fall through to SMTP
+                print(f"ℹ️ Localhost detected: Falling back to SMTP since Resend failed.")
         except Exception as e:
-            # If it's our own raised Exception, pass it up
-            if "Resend" in str(e):
-                raise e
+            if "Resend" in str(e): raise e
             print(f"❌ Resend Exception: {str(e)}")
 
     # ✅ FALLBACK TO SMTP (For Local Development)
-    # This only runs if RESEND_API_KEY is missing or a low-level network error occurred with requests
+    # This runs if RESEND_API_KEY is missing, or if Resend failed on Localhost.
     import time
     def get_ipv4(host):
         try: return socket.gethostbyname(host)
