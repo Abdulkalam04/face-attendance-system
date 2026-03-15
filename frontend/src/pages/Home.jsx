@@ -210,7 +210,7 @@ export default function Home() {
                   <Lottie
                     animationData={animationData}
                     loop={true}
-                    className={`w-full transition-all duration-700 ${theme === 'dark' ? 'invert grayscale brightness-150 contrast-125' : ''}`}
+                    className={`w-full transition-all duration-700 ${theme === 'dark' ? 'invert brightness-[2.5] contrast-[1.2] hue-rotate-[180deg] drop-shadow-[0_0_12px_rgba(99,102,241,0.8)]' : ''}`}
                     style={{ mixBlendMode: theme === 'dark' ? 'screen' : 'multiply' }}
                   />
                 </motion.div>
