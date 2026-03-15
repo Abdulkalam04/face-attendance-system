@@ -86,6 +86,52 @@ export default function StudentDashboard() {
     }
   }, [navigate]);
 
+  const fetchDashboard = async (isSilent = false) => {
+    if (!activeClass) return;
+    if (!isSilent) setLoading(true);
+    try {
+      const roll = localStorage.getItem("userRollNo");
+      const res = await API.get(
+        `/student/dashboard-stats/${roll}/${activeClass}`,
+        { params: { start_date: startDate, end_date: endDate } }
+      );
+
+      setStats(res.data.stats);
+      if (res.data.profile) {
+        setProfile(res.data.profile);
+      }
+
+      try {
+        const timeRes = await API.get(`/get-timetable/${activeClass}`);
+        setTimetableUrl(timeRes.data?.url || null);
+      } catch {
+        setTimetableUrl(null);
+      }
+
+      await fetchMessages(activeClass);
+    } catch (err) {
+      console.error("Dashboard fetch error", err);
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  };
+
+  const checkSession = async () => {
+    if (!activeClass) return;
+    try {
+      const cid = activeClass.trim().toUpperCase();
+      const res = await API.get(`/attendance/check-session/${cid}`);
+
+      if (res.data && (res.data.active === true || res.data.active === 1 || res.data.active === "true")) {
+        setActiveSession(res.data);
+      } else {
+        setActiveSession(null);
+      }
+    } catch (err) {
+      setActiveSession(null);
+    }
+  };
+
   // 2. FETCH DATA WHEN ACTIVE CLASS CHANGES
   useEffect(() => {
     if (!activeClass) return;
@@ -101,63 +147,21 @@ export default function StudentDashboard() {
       }));
     }
 
-    const roll = localStorage.getItem("userRollNo");
-
-    const fetchDashboard = async () => {
-      setLoading(true);
-      try {
-        const res = await API.get(
-          `/student/dashboard-stats/${roll}/${activeClass}`,
-          { params: { start_date: startDate, end_date: endDate } }
-        );
-
-        setStats(res.data.stats);
-        if (res.data.profile) {
-          setProfile(res.data.profile);
-        }
-
-        try {
-          const timeRes = await API.get(`/get-timetable/${activeClass}`);
-          setTimetableUrl(timeRes.data?.url || null);
-        } catch {
-          setTimetableUrl(null);
-        }
-
-        await fetchMessages(activeClass);
-      } catch (err) {
-        console.error("Dashboard fetch error", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboard();
   }, [activeClass, startDate, endDate]);
 
-  // 3. REFRESH SESSION STATUS EVERY 5 SECONDS
+  // 3. REFRESH SESSION STATUS & STATS EVERY 5 SECONDS
   useEffect(() => {
     if (!activeClass) return;
 
-    const checkSession = async () => {
-      try {
-        const cid = activeClass.trim().toUpperCase();
-        const res = await API.get(`/attendance/check-session/${cid}`);
-
-        // Use truthy check instead of strict === true for better compatibility
-        if (res.data && (res.data.active === true || res.data.active === 1 || res.data.active === "true")) {
-          setActiveSession(res.data);
-        } else {
-          setActiveSession(null);
-        }
-      } catch (err) {
-        setActiveSession(null);
-      }
+    const refreshStudentData = () => {
+      checkSession();
+      fetchDashboard(true); // Silent refresh
     };
 
-    checkSession();
-    const interval = setInterval(checkSession, 5000);
+    const interval = setInterval(refreshStudentData, 5000);
     return () => clearInterval(interval);
-  }, [activeClass]);
+  }, [activeClass, startDate, endDate]); // Added startDate/endDate to dependencies for correct stats refresh
 
   const handleClassChange = (cid) => {
     setActiveClass(cid);

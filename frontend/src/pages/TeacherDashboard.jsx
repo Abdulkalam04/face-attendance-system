@@ -121,17 +121,25 @@ export default function TeacherDashboard() {
     fetchMessages();
   };
 
+  // ✅ AUTO-REFRESH SYSTEM (Every 5 seconds)
   useEffect(() => {
-    if (
-      teacherInfo.classId &&
-      teacherInfo.classId !== "NOT-ASSIGNED" &&
-      teacherInfo.classId !== "Loading..."
-    ) {
+    if (!teacherInfo.classId || teacherInfo.classId === "NOT-ASSIGNED") return;
+
+    const refreshDashboardData = () => {
       fetchStudents();
       fetchAttendance();
-      fetchTimetable(); // Fetch timetable status on load
       fetchLeaderboard();
-    }
+      fetchPendingRequests();
+      fetchMessages();
+    };
+
+    // Initial load
+    fetchTimetable();
+    refreshDashboardData();
+
+    // Set interval for real-time updates
+    const interval = setInterval(refreshDashboardData, 5000);
+    return () => clearInterval(interval);
   }, [teacherInfo.classId, startDate, endDate]);
 
   const fetchLeaderboard = async () => {
@@ -140,17 +148,6 @@ export default function TeacherDashboard() {
       setLeaderboard(res.data || []);
     } catch (err) { console.error("Leaderboard fetch failed", err); }
   };
-
-  // ✅ REFRESH PENDING REQUESTS EVERY 5 SECONDS
-  useEffect(() => {
-    let interval;
-    // Always fetch request regardless of session for manual updates or lingering requests
-    if (teacherInfo.classId !== "NOT-ASSIGNED") {
-      fetchPendingRequests(); // initial call
-      interval = setInterval(fetchPendingRequests, 5000);
-    }
-    return () => clearInterval(interval);
-  }, [isSessionActive, teacherInfo.classId]);
 
   const fetchStudents = async () => {
     try {
