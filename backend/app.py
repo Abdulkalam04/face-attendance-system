@@ -104,15 +104,24 @@ College Administration
     """
     msg.attach(MIMEText(body, 'plain'))
 
-    # ✅ DUAL-PORT FALLBACK SYSTEM (Port 465 SSL & Port 587 TLS)
-    # This solves "Network is unreachable" by trying both common SMTP paths
+    # ✅ DUAL-PORT + IPv4 FORCED FALLBACK (Fixes [Errno 101] Network is unreachable)
+    # This specifically targets cases where IPv6 is present but blocked by ISP.
     success = False
     last_error = ""
 
+    # Helper to resolve only IPv4 to prevent unreachable IPv6 attempts
+    def get_ipv4(host):
+        try:
+            return socket.gethostbyname(host)
+        except:
+            return host
+
+    ipv4_host = get_ipv4(SMTP_SERVER)
+
     # Attempt 1: Port 465 (SSL)
     try:
-        print(f"🔄 Attempting SSL (Port 465) for {to_email}...")
-        with smtplib.SMTP_SSL(SMTP_SERVER, 465, timeout=10) as server:
+        print(f"🔄 Attempting SSL (Port 465) for {to_email} (IPv4: {ipv4_host})...")
+        with smtplib.SMTP_SSL(ipv4_host, 465, timeout=20) as server:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
         print(f"📧 Alert email sent via Port 465 SSL")
@@ -124,8 +133,8 @@ College Administration
     # Attempt 2: Port 587 (TLS/STARTTLS) - Fallback
     if not success:
         try:
-            print(f"🔄 Falling back to TLS (Port 587) for {to_email}...")
-            with smtplib.SMTP(SMTP_SERVER, 587, timeout=10) as server:
+            print(f"🔄 Falling back to TLS (Port 587) for {to_email} (IPv4: {ipv4_host})...")
+            with smtplib.SMTP(ipv4_host, 587, timeout=20) as server:
                 server.starttls()
                 server.login(SENDER_EMAIL, SENDER_PASSWORD)
                 server.send_message(msg)
@@ -136,7 +145,7 @@ College Administration
             print(f"❌ Port 587 failed: {last_error}")
 
     if not success:
-        raise Exception(f"Mail Delivery failed after trying SSL and TLS: {last_error}")
+        raise Exception(f"Mail Delivery failed (Network Unreachable). Please ensure your internet allows SMTP. Error: {last_error}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
