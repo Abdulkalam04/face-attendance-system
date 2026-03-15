@@ -19,6 +19,10 @@ from email.mime.multipart import MIMEMultipart
 import random
 import string
 from itsdangerous import URLSafeTimedSerializer
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 # ---------------- APP CONFIG ----------------
