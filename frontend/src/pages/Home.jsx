@@ -17,6 +17,11 @@ export default function Home() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem("theme", theme);
   }, [theme]);
 
@@ -80,7 +85,11 @@ export default function Home() {
       <div className="absolute top-8 right-8 z-50">
         <button
           onClick={toggleTheme}
-          className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:scale-110 active:scale-95 transition-all shadow-xl border border-indigo-100 dark:border-slate-700"
+          style={{
+            backgroundColor: theme === 'dark' ? '#1e293b' : '#f0f4ff',
+            color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+          }}
+          className="p-3.5 rounded-2xl hover:scale-110 active:scale-95 transition-all shadow-xl border border-indigo-100 dark:border-slate-700"
         >
           {theme === "light" ? <Moon size={22} strokeWidth={2.5} /> : <Sun size={22} strokeWidth={2.5} />}
         </button>
@@ -110,7 +119,7 @@ export default function Home() {
 
           {/* Fluid Typing Heading (With proper padding to fix 'e' clipping) */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white mb-2 py-1 pr-4">
-            <span className="bg-gradient-to-r from-indigo-700 to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm">
+            <span className="bg-gradient-to-r from-indigo-700 to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm px-2">
               {firstWord}
             </span>
             {words.length > 1 && (
