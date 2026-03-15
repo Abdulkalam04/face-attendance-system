@@ -12,7 +12,7 @@ export default function Home() {
 
   const fullText = "Face Recognition";
 
-  // Theme Management System
+  // Use a reliable theme sync that matches Navbar.jsx
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   useEffect(() => {
@@ -61,14 +61,14 @@ export default function Home() {
 
   return (
     <motion.main
-      className="relative w-full min-h-screen font-poppins text-slate-900 overflow-hidden selection:bg-indigo-500/30"
+      className="relative w-full min-h-screen font-poppins text-slate-900 border-4 border-indigo-200 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-indigo-100 transition-all duration-500 selection:bg-indigo-500/30"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Background Ambience Layers */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/15 blur-[120px] rounded-full pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none" />
+      {/* Background Ambience Layers (Matched to Dashboard) */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/40 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-200/40 blur-[100px] rounded-full pointer-events-none" />
 
       {/* Subtle Mesh Grid Pattern */}
       <div
@@ -76,21 +76,20 @@ export default function Home() {
         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)', backgroundSize: '40px 40px' }}
       />
 
-      {/* Theme Toggle Button */}
-      <div className="absolute top-6 right-6 md:top-10 md:right-10 z-50">
+      {/* Theme Toggle Button - Premium Style */}
+      <div className="absolute top-8 right-8 z-50">
         <button
           onClick={toggleTheme}
-          className="p-3.5 rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-slate-200 transition-all shadow-xl hover:scale-105 active:scale-95"
-          title="Toggle Theme"
+          className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:scale-110 active:scale-95 transition-all shadow-xl border border-indigo-100 dark:border-slate-700"
         >
-          {theme === "light" ? <Moon size={22} /> : <Sun size={22} />}
+          {theme === "light" ? <Moon size={22} strokeWidth={2.5} /> : <Sun size={22} strokeWidth={2.5} />}
         </button>
       </div>
 
       {/* Hero Section */}
       <section
         id="home"
-        className="min-h-[calc(100vh-80px)] flex flex-col justify-center lg:flex-row 
+        className="min-h-screen flex flex-col justify-center lg:flex-row 
                    items-center px-6 md:px-12 lg:px-20 gap-16 lg:gap-10 w-full 
                    max-w-[1440px] mx-auto py-20 relative z-10"
       >
@@ -109,9 +108,9 @@ export default function Home() {
             <ShieldCheck size={16} className="animate-pulse" /> AI Biometric Nexus
           </motion.div>
 
-          {/* Fluid Typing Heading (With proper cursor placement) */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tighter text-slate-900 mb-2 py-2">
-            <span className="bg-gradient-to-r from-indigo-700 to-blue-500 bg-clip-text text-transparent drop-shadow-sm pr-2">
+          {/* Fluid Typing Heading (With proper padding to fix 'e' clipping) */}
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white mb-2 py-1 pr-4">
+            <span className="bg-gradient-to-r from-indigo-700 to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm">
               {firstWord}
             </span>
             {words.length > 1 && (
@@ -129,8 +128,8 @@ export default function Home() {
 
           </h1>
 
-          <p className="text-slate-600 text-lg md:text-xl lg:text-2xl max-w-lg leading-relaxed font-light">
-            Next-generation <span className="text-slate-900 font-medium border-b border-indigo-500/50">automated attendance</span>.
+          <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl lg:text-2xl max-w-lg leading-relaxed font-light">
+            Next-generation <span className="text-indigo-600 dark:text-indigo-400 font-bold border-b-2 border-indigo-500/20">automated attendance</span>.
             Precision facial mapping powered by neural networks. Seamless integration, absolute security.
           </p>
 
@@ -205,13 +204,14 @@ export default function Home() {
               {animationData && (
                 <motion.div
                   className="w-full max-w-[450px] relative z-10"
-                  animate={{ y: [0, -10, 0] }}
+                  animate={{ y: [0, -12, 0] }}
                   transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                 >
                   <Lottie
                     animationData={animationData}
                     loop={true}
-                    className="face-img w-full"
+                    className={`w-full transition-all duration-700 ${theme === 'dark' ? 'invert brightness-110 contrast-125' : ''}`}
+                    style={{ mixBlendMode: theme === 'dark' ? 'screen' : 'multiply' }}
                   />
                 </motion.div>
               )}
