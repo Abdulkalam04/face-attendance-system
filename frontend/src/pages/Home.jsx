@@ -212,8 +212,8 @@ export default function Home() {
                     loop={true}
                     className="w-full transition-all duration-700"
                     style={{
-                      mixBlendMode: theme === 'dark' ? 'color-dodge' : 'multiply',
-                      filter: theme === 'dark' ? 'brightness(1.5) contrast(1.2) drop-shadow(0 0 15px rgba(99,102,241,0.6))' : 'none'
+                      mixBlendMode: theme === 'dark' ? 'screen' : 'multiply',
+                      filter: theme === 'dark' ? 'invert(1) brightness(1.5) sepia(1) hue-rotate(190deg) saturate(5) drop-shadow(0 0 10px rgba(99,102,241,0.8))' : 'none'
                     }}
                   />
                 </motion.div>
