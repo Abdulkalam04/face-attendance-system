@@ -71,87 +71,110 @@ MAX_DISTANCE_METERS = 10000
 # Using .strip() to prevent accidental spaces from environment variables
 SMTP_SERVER = os.environ.get('SMTP_SERVER', "smtp.gmail.com").strip()
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "abdulka0440r@gmail.com").strip()
-# IMPORTANT: Generate a 16-character "App Password" from your Google Account
-# .replace(" ", "") ensures the 16-character code works even if spaces were kept
 SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nvbn vzpr vkoo khgn").strip().replace(" ", "")
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', "re_ZN435ycS_Q727pErfhKAEYCBX3FxYX7ia").strip()
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "onboarding@resend.dev").strip()
 
-def send_email_alert(to_email, student_name, percentage, teacher_name="Professor", teacher_email=None):
-    """Send a low-attendance alert email. Reflects the teacher's identity."""
-    msg = MIMEMultipart()
-    
-    # ✅ CLEANER HEADERS: Using quotes for the name ensures special chars don't break the header
+def send_email_alert(to_email, student_name, percentage, teacher_name="Professor", teacher_email=None, is_reset=False, reset_link=None):
+    """Send a low-attendance alert email or password reset link. Reflects the teacher's identity."""
     display_name = f"{teacher_name} (via Attendify)"
-    msg['From'] = f'"{display_name}" <{SENDER_EMAIL}>'
-    msg['To'] = to_email
-    # ✅ REPLY-TO: If student replies, it goes to the teacher, not the system
-    if teacher_email:
-        msg['Reply-To'] = teacher_email
     
-    msg['Subject'] = f"LOW ATTENDANCE ALERT: {student_name}"
+    if is_reset:
+        subject = "Password Reset Request - Attendify"
+        body = f"""
+        Hello {student_name},
 
-    body = f"""
-Dear {student_name},
+        We received a request to reset your password for your Attendify account.
+        
+        Click the link below to reset your password:
+        {reset_link}
 
-This is an automated alert from the Attendance Tracking System.
-Your attendance for the current month has dropped to {percentage}%, which is below the required 75%.
+        This link will expire in 15 minutes.
+        If you did not request this, please ignore this email.
 
-Please ensure you attend your upcoming lectures to maintain your academic standing.
-Excessive absenteeism may lead to disciplinary action or hall ticket blocking.
+        Regards,
+        Attendify Security Team
+        """
+    else:
+        subject = f"LOW ATTENDANCE ALERT: {student_name}"
+        body = f"""
+        Dear {student_name},
 
-Regards,
-College Administration
-    """
-    msg.attach(MIMEText(body, 'plain'))
+        This is an automated alert from Attendify on behalf of {teacher_name}.
+        Your current attendance in this subject has fallen to {percentage}%.
 
-    # ✅ SUPER-RESILIENT EMAIL SYSTEM (Retries + High Timeout + IPv4 Force)
-    # This solves [Errno 101] and "timed out" on fragile/restricted networks.
+        Please ensure you attend upcoming lectures to maintain the required attendance criteria.
+
+        Regards,
+        {teacher_name}
+        """
+
+    # ✅ USE RESEND API (Avoids Cloud Port Blocks)
+    if RESEND_API_KEY:
+        import requests
+        try:
+            print(f"🚀 Using Resend API for {to_email}...")
+            response = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": f"Attendify <{SENDER_EMAIL}>",
+                    "to": to_email,
+                    "subject": subject,
+                    "html": body.replace("\n", "<br>"),
+                    "reply_to": teacher_email if teacher_email else SENDER_EMAIL
+                }
+            )
+            if response.status_code in [200, 201]:
+                print(f"📧 SUCCESS: Email sent via Resend API")
+                return
+            else:
+                print(f"⚠️ Resend API failed (Status {response.status_code}): {response.text}")
+                # Fall through to SMTP if API fails
+        except Exception as e:
+            print(f"❌ Resend Exception: {str(e)}")
+
+    # ✅ FALLBACK TO SMTP (For Local Development)
     import time
-    
     def get_ipv4(host):
         try: return socket.gethostbyname(host)
         except: return host
 
     ipv4_host = get_ipv4(SMTP_SERVER)
-    max_retries = 3
+    max_retries = 2
     success = False
     last_error = ""
 
-    # 1-second pacing to prevent Gmail from blocking burst connections from home IPs
-    time.sleep(1.5)
-
     for attempt in range(max_retries):
         try:
-            print(f"🔄 [Attempt {attempt+1}/{max_retries}] Sending email to {to_email}...")
-            
-            # Try Port 465 (SSL) First - Most reliable with Gmail
+            print(f"🔄 [SMTP Fallback Attempt {attempt+1}] for {to_email}...")
+            msg = MIMEMultipart()
+            msg['From'] = f'"{display_name}" <{SENDER_EMAIL}>'
+            msg['To'] = to_email
+            if teacher_email: msg['Reply-To'] = teacher_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain'))
+
             try:
-                with smtplib.SMTP_SSL(ipv4_host, 465, timeout=60, local_hostname='localhost') as server:
+                with smtplib.SMTP_SSL(ipv4_host, 465, timeout=15) as server:
                     server.login(SENDER_EMAIL, SENDER_PASSWORD)
                     server.send_message(msg)
-                print(f"📧 SUCCESS: Alert sent via Port 465 (Attempt {attempt+1})")
-                success = True
-                break
-            except Exception as e1:
-                # Fallback to Port 587 (TLS) if SSL is blocked
-                print(f"⚠️ Port 465 failed, trying TLS 587... ({e1})")
-                with smtplib.SMTP(ipv4_host, 587, timeout=60, local_hostname='localhost') as server:
+                success = True; break
+            except:
+                with smtplib.SMTP(ipv4_host, 587, timeout=15) as server:
                     server.starttls()
                     server.login(SENDER_EMAIL, SENDER_PASSWORD)
                     server.send_message(msg)
-                print(f"📧 SUCCESS: Alert sent via Port 587 (Attempt {attempt+1})")
-                success = True
-                break
-
+                success = True; break
         except Exception as e:
             last_error = str(e)
-            print(f"❌ Attempt {attempt+1} failed for {to_email}: {last_error}")
-            if attempt < max_retries - 1:
-                time.sleep(3) # Wait before retrying
-            continue
+            time.sleep(1)
 
     if not success:
-        raise Exception(f"Network Timeout: Gmail is rejecting the connection from your current network. Error: {last_error}")
+        raise Exception(f"Email Failed: {last_error}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
@@ -215,33 +238,14 @@ def forgot_password():
     
     # Send email
     try:
-        msg = MIMEMultipart()
-        msg['From'] = f"Attendify Security <{SENDER_EMAIL}>"
-        msg['To'] = email
-        msg['Subject'] = "Password Reset Request - Attendify"
-
-        body = f"""
-        Hello {user.name},
-
-        We received a request to reset your password for your {user_type} account.
-        
-        Click the link below to reset your password:
-        {reset_link}
-
-        This link will expire in 15 minutes.
-        If you did not request this, please ignore this email.
-
-        Regards,
-        Attendify Security Team
-        """
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        
+        send_email_alert(
+            email, 
+            user.name, 
+            0, 
+            teacher_name="Attendify Security", 
+            is_reset=True, 
+            reset_link=reset_link
+        )
         return jsonify({"message": "Password reset link has been sent to your email."}), 200
     except Exception as e:
         print(f"Error sending recovery email: {e}")
