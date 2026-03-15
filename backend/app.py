@@ -104,48 +104,54 @@ College Administration
     """
     msg.attach(MIMEText(body, 'plain'))
 
-    # ✅ DUAL-PORT + IPv4 FORCED FALLBACK (Fixes [Errno 101] Network is unreachable)
-    # This specifically targets cases where IPv6 is present but blocked by ISP.
+    # ✅ SUPER-RESILIENT EMAIL SYSTEM (Retries + High Timeout + IPv4 Force)
+    # This solves [Errno 101] and "timed out" on fragile/restricted networks.
+    import time
+    
+    def get_ipv4(host):
+        try: return socket.gethostbyname(host)
+        except: return host
+
+    ipv4_host = get_ipv4(SMTP_SERVER)
+    max_retries = 3
     success = False
     last_error = ""
 
-    # Helper to resolve only IPv4 to prevent unreachable IPv6 attempts
-    def get_ipv4(host):
+    # 1-second pacing to prevent Gmail from blocking burst connections from home IPs
+    time.sleep(1.5)
+
+    for attempt in range(max_retries):
         try:
-            return socket.gethostbyname(host)
-        except:
-            return host
+            print(f"🔄 [Attempt {attempt+1}/{max_retries}] Sending email to {to_email}...")
+            
+            # Try Port 465 (SSL) First - Most reliable with Gmail
+            try:
+                with smtplib.SMTP_SSL(ipv4_host, 465, timeout=60, local_hostname='localhost') as server:
+                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                    server.send_message(msg)
+                print(f"📧 SUCCESS: Alert sent via Port 465 (Attempt {attempt+1})")
+                success = True
+                break
+            except Exception as e1:
+                # Fallback to Port 587 (TLS) if SSL is blocked
+                print(f"⚠️ Port 465 failed, trying TLS 587... ({e1})")
+                with smtplib.SMTP(ipv4_host, 587, timeout=60, local_hostname='localhost') as server:
+                    server.starttls()
+                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                    server.send_message(msg)
+                print(f"📧 SUCCESS: Alert sent via Port 587 (Attempt {attempt+1})")
+                success = True
+                break
 
-    ipv4_host = get_ipv4(SMTP_SERVER)
-
-    # Attempt 1: Port 465 (SSL)
-    try:
-        print(f"🔄 Attempting SSL (Port 465) for {to_email} (IPv4: {ipv4_host})...")
-        with smtplib.SMTP_SSL(ipv4_host, 465, timeout=20) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.send_message(msg)
-        print(f"📧 Alert email sent via Port 465 SSL")
-        success = True
-    except Exception as e:
-        last_error = str(e)
-        print(f"⚠️ Port 465 failed: {last_error}")
-
-    # Attempt 2: Port 587 (TLS/STARTTLS) - Fallback
-    if not success:
-        try:
-            print(f"🔄 Falling back to TLS (Port 587) for {to_email} (IPv4: {ipv4_host})...")
-            with smtplib.SMTP(ipv4_host, 587, timeout=20) as server:
-                server.starttls()
-                server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                server.send_message(msg)
-            print(f"📧 Alert email sent via Port 587 TLS")
-            success = True
         except Exception as e:
             last_error = str(e)
-            print(f"❌ Port 587 failed: {last_error}")
+            print(f"❌ Attempt {attempt+1} failed for {to_email}: {last_error}")
+            if attempt < max_retries - 1:
+                time.sleep(3) # Wait before retrying
+            continue
 
     if not success:
-        raise Exception(f"Mail Delivery failed (Network Unreachable). Please ensure your internet allows SMTP. Error: {last_error}")
+        raise Exception(f"Network Timeout: Gmail is rejecting the connection from your current network. Error: {last_error}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
