@@ -227,14 +227,14 @@ export default function Home() {
               <motion.div
                 animate={{ y: [0, -10, 0], x: [0, 5, 0] }}
                 transition={{ repeat: Infinity, duration: 5 }}
-                className="absolute top-10 right-0 z-40 px-3 py-1.5 bg-indigo-600/10 backdrop-blur-md border border-indigo-500/30 rounded-lg text-[10px] font-mono text-indigo-400 hidden lg:block"
+                className="absolute top-10 right-0 z-40 px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-600/10 backdrop-blur-md border border-indigo-500/30 rounded-lg text-[9px] sm:text-[10px] font-mono text-indigo-400"
               >
                 UID: 82.21.09
               </motion.div>
               <motion.div
                 animate={{ y: [0, 10, 0], x: [0, -5, 0] }}
                 transition={{ repeat: Infinity, duration: 6 }}
-                className="absolute bottom-10 left-0 z-40 px-3 py-1.5 bg-blue-600/10 backdrop-blur-md border border-blue-500/30 rounded-lg text-[10px] font-mono text-blue-400 hidden lg:block"
+                className="absolute bottom-10 left-0 z-40 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-600/10 backdrop-blur-md border border-blue-500/30 rounded-lg text-[9px] sm:text-[10px] font-mono text-blue-400"
               >
                 LATENCY: 12ms
               </motion.div>
