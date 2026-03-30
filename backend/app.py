@@ -71,21 +71,25 @@ COLLEGE_LONG = 72.920806
 MAX_DISTANCE_METERS = 10000
 
 # ---------------- EMAIL CONFIG ----------------
-# It's recommended to set these in your Render or Local Environment Variables
-# Using .strip() to prevent accidental spaces from environment variables
+# Using Gmail SMTP directly as per the previous working version
 SMTP_SERVER = os.environ.get('SMTP_SERVER', "smtp.gmail.com").strip()
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
-SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nvbn vzpr vkoo khgn").strip().replace(" ", "")
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY', "re_ZN435ycS_Q727pErfhKAEYCBX3FxYX7ia").strip()
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "onboarding@resend.dev").strip()
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', "abdulka0440r@gmail.com").strip()
+# Use the App Password from .env or provided fallback (removing spaces)
+SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', "nwpp bkwz gauq afly").strip()
 
 def send_email_alert(to_email, student_name, percentage, teacher_name="Professor", teacher_email=None, is_reset=False, reset_link=None):
-    """Send a low-attendance alert email or password reset link. Reflects the teacher's identity."""
-    display_name = f"{teacher_name} (via Attendify)"
-    
-    if is_reset:
-        subject = "Password Reset Request - Attendify"
-        body = f"""
+    """Send a low-attendance alert email or password reset link using direct SMTP."""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = to_email
+        if teacher_email:
+            msg['Reply-To'] = teacher_email
+
+        if is_reset:
+            msg['Subject'] = "Password Reset Request - Attendify"
+            body = f"""
         Hello {student_name},
 
         We received a request to reset your password for your Attendify account.
@@ -98,100 +102,36 @@ def send_email_alert(to_email, student_name, percentage, teacher_name="Professor
 
         Regards,
         Attendify Security Team
-        """
-    else:
-        subject = f"LOW ATTENDANCE ALERT: {student_name}"
-        body = f"""
-        Dear {student_name},
+            """
+        else:
+            msg['Subject'] = f"LOW ATTENDANCE ALERT: {student_name}"
+            body = f"""
+Dear {student_name},
 
-        This is an automated alert from Attendify on behalf of {teacher_name}.
-        Your current attendance in this subject has fallen to {percentage}%.
+This is an automated alert from the Attendance Tracking System on behalf of {teacher_name}.
+Your current attendance in this subject has fallen to {percentage}%, which is below the required 75%.
 
-        Please ensure you attend upcoming lectures to maintain the required attendance criteria.
+Please ensure you attend upcoming lectures to maintain your academic standing.
+Excessive absenteeism may lead to disciplinary action.
 
-        Regards,
-        {teacher_name}
-        """
+Regards,
+{teacher_name}
+            """
+        
+        msg.attach(MIMEText(body, 'plain'))
 
-    # ✅ USE RESEND API (Avoids Cloud Port Blocks)
-    if RESEND_API_KEY:
-        import requests
-        try:
-            print(f"🚀 Using Resend API for {to_email}...")
-            response = requests.post(
-                "https://api.resend.com/emails",
-                headers={
-                    "Authorization": f"Bearer {RESEND_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "from": f"Attendify <{SENDER_EMAIL}>",
-                    "to": to_email,
-                    "subject": subject,
-                    "html": body.replace("\n", "<br>"),
-                    "reply_to": teacher_email if teacher_email else SENDER_EMAIL
-                }
-            )
-            if response.status_code in [200, 201]:
-                print(f"📧 SUCCESS: Email sent via Resend API")
-                return
-            else:
-                error_info = response.json() if response.headers.get('Content-Type') == 'application/json' else {"message": response.text}
-                error_msg = error_info.get('message', response.text)
-                
-                print(f"⚠️ Resend API failed (Status {response.status_code}): {error_msg}")
-                
-                # If on Cloud (Render/Vercel), we MUST raise because SMTP will hide errors and timeout
-                if os.environ.get('RENDER') or os.environ.get('VERCEL'):
-                    if response.status_code == 403:
-                         raise Exception(f"Resend Error: {error_msg}. Tip: Onboarding domain only allows sending to your own email. Verify a domain at resend.com.")
-                    raise Exception(f"Resend API Error: {error_msg}")
-                
-                # On Localhost, we log the error and let it fall through to SMTP
-                print(f"ℹ️ Localhost detected: Falling back to SMTP since Resend failed.")
-        except Exception as e:
-            if "Resend" in str(e): raise e
-            print(f"❌ Resend Exception: {str(e)}")
+        # Direct SMTP connection
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"📧 Email successfully sent to {to_email}")
+    except Exception as e:
+        print(f"❌ SMTP Error: {str(e)}")
+        raise Exception(f"Failed to send email: {str(e)}")
 
-    # ✅ FALLBACK TO SMTP (For Local Development)
-    # This runs if RESEND_API_KEY is missing, or if Resend failed on Localhost.
-    import time
-    def get_ipv4(host):
-        try: return socket.gethostbyname(host)
-        except: return host
-
-    ipv4_host = get_ipv4(SMTP_SERVER)
-    max_retries = 2
-    success = False
-    last_error = ""
-
-    for attempt in range(max_retries):
-        try:
-            print(f"🔄 [SMTP Fallback Attempt {attempt+1}] for {to_email}...")
-            msg = MIMEMultipart()
-            msg['From'] = f'"{display_name}" <{SENDER_EMAIL}>'
-            msg['To'] = to_email
-            if teacher_email: msg['Reply-To'] = teacher_email
-            msg['Subject'] = subject
-            msg.attach(MIMEText(body, 'plain'))
-
-            try:
-                with smtplib.SMTP_SSL(ipv4_host, 465, timeout=15) as server:
-                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                    server.send_message(msg)
-                success = True; break
-            except:
-                with smtplib.SMTP(ipv4_host, 587, timeout=15) as server:
-                    server.starttls()
-                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                    server.send_message(msg)
-                success = True; break
-        except Exception as e:
-            last_error = str(e)
-            time.sleep(1)
-
-    if not success:
-        raise Exception(f"Email Failed: {last_error}")
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in meters using Haversine formula"""
