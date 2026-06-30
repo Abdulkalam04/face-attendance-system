@@ -341,7 +341,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 👥 Authors
 
 - **Project**: Face Attendance System
-- **Year**: 2024
+- **Year**: 2025
 
 ## 🤝 Support
 
