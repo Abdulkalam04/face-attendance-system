@@ -210,7 +210,10 @@ export default function StudentRegister() {
               className="w-full bg-gradient-to-r from-indigo-600 to-indigo-800 text-white py-4 rounded-2xl font-black text-lg disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-indigo-200 flex items-center justify-center gap-3"
             >
               {loading ? (
-                <RefreshCw className="animate-spin" size={24} />
+                <>
+                  <RefreshCw className="animate-spin" size={24} />
+                  Processing face...
+                </>
               ) : (
                 "Complete Student Registration"
               )}

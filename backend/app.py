@@ -60,9 +60,9 @@ PERSISTENT_DIR = os.environ.get('PERSISTENT_DIR', '.')
 PICKLE_PATH = os.path.join(PERSISTENT_DIR, "face_data.pkl")
 
 
-def encode_face_image(image_file):
+def encode_face_image(image_file, max_size=640):
     image = Image.fromarray(face_recognition.load_image_file(image_file))
-    image.thumbnail((640, 640), Image.Resampling.BILINEAR)
+    image.thumbnail((max_size, max_size), Image.Resampling.BILINEAR)
     image = np.asarray(image)
 
     face_locations = face_recognition.face_locations(
@@ -348,7 +348,7 @@ def register_teacher():
         )
 
         if image_file:
-            encs = encode_face_image(image_file)
+            encs = encode_face_image(image_file, max_size=480)
             if encs:
                 save_to_pickle(new_teacher.email, encs[0])
 
@@ -391,7 +391,7 @@ def register_student():
 
         if image_file:
             print(f"Processing face for {email}...")
-            encs = encode_face_image(image_file)
+            encs = encode_face_image(image_file, max_size=480)
             if encs:
                 save_to_pickle(new_student.email, encs[0])
                 print("Face encoding saved.")
@@ -1207,7 +1207,7 @@ def enroll_face():
              return jsonify({"error": "User record not found"}), 404
 
         # 2. Extract and Save Encoding
-        encs = encode_face_image(image_file)
+        encs = encode_face_image(image_file, max_size=480)
         
         if not encs:
             return jsonify({"error": "Face not detected. Ensure good lighting."}), 400
