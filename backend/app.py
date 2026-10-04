@@ -11,6 +11,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import io
 import pandas as pd
+import numpy as np
+from PIL import Image
 from datetime import datetime, timedelta, timezone
 import math
 import smtplib
@@ -56,6 +58,23 @@ def ping():
 # On Render, use the persistent disk path. Locally, use current directory.
 PERSISTENT_DIR = os.environ.get('PERSISTENT_DIR', '.')  
 PICKLE_PATH = os.path.join(PERSISTENT_DIR, "face_data.pkl")
+
+
+def encode_face_image(image_file):
+    image = Image.fromarray(face_recognition.load_image_file(image_file))
+    image.thumbnail((640, 640), Image.Resampling.BILINEAR)
+    image = np.asarray(image)
+
+    face_locations = face_recognition.face_locations(
+        image, number_of_times_to_upsample=0
+    )
+    if not face_locations:
+        face_locations = face_recognition.face_locations(
+            image, number_of_times_to_upsample=1
+        )
+
+    return face_recognition.face_encodings(image, face_locations)
+
 
 # ---------------- TIMETABLE STORAGE ----------------
 TIMETABLE_DIR = os.path.join(PERSISTENT_DIR, "uploads")
@@ -329,8 +348,7 @@ def register_teacher():
         )
 
         if image_file:
-            img = face_recognition.load_image_file(image_file)
-            encs = face_recognition.face_encodings(img)
+            encs = encode_face_image(image_file)
             if encs:
                 save_to_pickle(new_teacher.email, encs[0])
 
@@ -373,8 +391,7 @@ def register_student():
 
         if image_file:
             print(f"Processing face for {email}...")
-            img = face_recognition.load_image_file(image_file)
-            encs = face_recognition.face_encodings(img)
+            encs = encode_face_image(image_file)
             if encs:
                 save_to_pickle(new_student.email, encs[0])
                 print("Face encoding saved.")
@@ -433,8 +450,7 @@ def login_with_face():
         if stored_encoding is None:
             return jsonify({"error": "Biometric record not found. Please register face."}), 400
 
-        attempt_image = face_recognition.load_image_file(image_file)
-        attempt_encodings = face_recognition.face_encodings(attempt_image)
+        attempt_encodings = encode_face_image(image_file)
 
         if not attempt_encodings:
             return jsonify({"error": "Face not clearly visible. Ensure good lighting."}), 400
@@ -1191,8 +1207,7 @@ def enroll_face():
              return jsonify({"error": "User record not found"}), 404
 
         # 2. Extract and Save Encoding
-        img = face_recognition.load_image_file(image_file)
-        encs = face_recognition.face_encodings(img)
+        encs = encode_face_image(image_file)
         
         if not encs:
             return jsonify({"error": "Face not detected. Ensure good lighting."}), 400
@@ -1311,8 +1326,7 @@ def verify_face_attendance():
         if stored_encoding is None:
             return jsonify({"success": False, "message": "No registered face data found"}), 404
 
-        captured_img = face_recognition.load_image_file(image_file)
-        captured_encs = face_recognition.face_encodings(captured_img)
+        captured_encs = encode_face_image(image_file)
 
         if not captured_encs:
             return jsonify({"success": False, "message": "Face not clear. Try again."}), 400

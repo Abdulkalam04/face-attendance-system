@@ -8,3 +8,5 @@ openpyxl
 itsdangerous
 python-dotenv
 requests
+numpy
+Pillow
