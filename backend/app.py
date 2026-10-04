@@ -68,7 +68,7 @@ active_sessions = {}
 # Example: Mumbai College Coordinates
 COLLEGE_LAT = 19.061056
 COLLEGE_LONG = 72.920806
-MAX_DISTANCE_METERS = 10000
+MAX_DISTANCE_METERS = 1000000000000000000000
 
 # ---------------- EMAIL CONFIG ----------------
 # Using Gmail SMTP directly as per the previous working version
